@@ -2,7 +2,7 @@
 MicroBase**.zip
 
 # Private config
-config2.json
+config**.json
 
 # Packages
 package-lock.json
