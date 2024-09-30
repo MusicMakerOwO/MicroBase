@@ -1,3 +1,13 @@
+# Major Versions
+MicroBase**.zip
+
+# Private config
+config2.json
+
+# Packages
+package-lock.json
+package.json
+
 # Logs
 logs
 *.log
