@@ -3,6 +3,7 @@ MicroBase**.zip
 
 # Private config
 config**.json
+CrateBot.json
 
 # Packages
 package-lock.json
