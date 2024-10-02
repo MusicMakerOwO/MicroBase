@@ -1,6 +1,8 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
+	alias: 'pong',
+	// aliases: ['pong'],
     data: new SlashCommandBuilder()
         .setName('ping')
         .setDescription('Pong!'),
