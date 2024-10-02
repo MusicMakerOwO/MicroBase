@@ -1,10 +1,12 @@
 'use strict';
 const { InteractionResponseType, MessageFlags, Routes, InteractionType } = require('discord-api-types/v10');
-const InteractionResponse = require(`${__dirname}/../node_modules/discord.js/src/structures/InteractionResponse`);
-const MessagePayload = require(`${__dirname}/../node_modules/discord.js/src/structures/MessagePayload`);
+const InteractionResponse = require(`${__dirname}/../../node_modules/discord.js/src/structures/InteractionResponse`);
+const MessagePayload = require(`${__dirname}/../../node_modules/discord.js/src/structures/MessagePayload`);
 
 // DJS really doesn't want you to edit this so we have to do it a little funny lol
-const InteractionResponses = require(`${__dirname}/../node_modules/discord.js/src/structures/interfaces/InteractionResponses`);
+const InteractionResponses = require(`${__dirname}/../../node_modules/discord.js/src/structures/interfaces/InteractionResponses`);
+
+const Collector = require('./Collector');
 
 class InteractionOverrides {
 
@@ -48,8 +50,22 @@ class InteractionOverrides {
 			auth: false
 		});
 		this.replied = true;
+		
+		// this is all such a hack lmfao
+		const message = await this.fetchReply();
+		this.messageID = message.id;
 
-		return options.fetchReply ? this.fetchReply() : new InteractionResponse(this);
+		// block access to traditional collectors
+		Object.assign(message, {
+			awaitMessageComponent: () => {
+				throw new Error('Traditional collectors are not supported in MicroBase, use interaction.createCollector() instead');
+			},
+			createMessageComponentCollector: () => {
+				throw new Error('Traditional collectors are not supported in MicroBase, use interaction.createCollector() instead');
+			}
+		});
+
+		return message;
 	}
 
 	fetchReply(message = '@original') {
@@ -122,7 +138,7 @@ class InteractionOverrides {
 		this.replied = true;
 	}
 
-	static applyToClass(structure, ignore = []) {
+	static applyToClass(structure) {
 		const props = Object.getOwnPropertyNames(InteractionOverrides.prototype);
 
 		const blockedProps = [
@@ -132,7 +148,7 @@ class InteractionOverrides {
 		]
 	
 		for (const prop of props) {
-			if (ignore.includes(prop) && !blockedProps.includes(prop)) continue;
+			if (blockedProps.includes(prop)) continue;
 			Object.defineProperty(
 				structure.prototype,
 				prop,
@@ -147,8 +163,6 @@ class InteractionOverrides {
 			InteractionResponses.prototype[prop] = InteractionOverrides.prototype[prop];
 		}
 	}
-
-
 }
 
 module.exports = InteractionOverrides.overrideInteractionResponses;
