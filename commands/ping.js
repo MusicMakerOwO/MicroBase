@@ -8,7 +8,7 @@ module.exports = {
         // this is optional, called on any autocomplete stuff
     },
     execute: async function(interaction, client) {
-		// await interaction.deferReply({ ephemeral: true, content: 'Pong!' });
+		await interaction.deferReply({ ephemeral: true, content: 'Pong!' });
 		await interaction.reply({ content: 'Pong again!', ephemeral: true });
 		await interaction.reply('This is pretty cool lol');
     }
