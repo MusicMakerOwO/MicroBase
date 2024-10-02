@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 
 module.exports = {
+	alias: ['echo'],
 	data: new SlashCommandBuilder()
 		.setName('say')
 		.setDescription('Say something!'),
