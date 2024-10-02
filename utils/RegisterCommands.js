@@ -9,7 +9,7 @@ module.exports = (client) => {
     const devCommands = [];
     const commandNames = [];
     for (const [_, command] of client.commands) {
-        const commandData = command.data?.toJSON();
+        const commandData = typeof command.data?.toJSON === 'function' ? command.data.toJSON() : command.data;
         commandData.dm_permission ??= false; // dms false by default
         try {
             if (!commandData) throw `No command.data found - Did you forget to save the file?`;
