@@ -1,6 +1,5 @@
 const ReadFolder = require('./ReadFolder.js');
 const { existsSync } = require('node:fs');
-const path = require('node:path');
 
 const { PermissionsBitField: { Flags: Permissions } } = require('discord.js');
 
@@ -57,23 +56,42 @@ module.exports = function (client, folder = null) {
 				}
 
 				if (data.dev && typeof data.dev !== 'boolean') throw 'Invalid dev type - Must be a boolean';
+				
 				if (data.cooldown && typeof data.cooldown !== 'number') throw 'Invalid cooldown type - Must be a number (seconds)';
+				if (data.cooldown && data.cooldown < 0) throw 'Invalid cooldown time - Must be greater than 0';
+
+				const aliases = data.alias ?? data.aliases ?? [];
+				if (aliases && (module === 'commands' || module === 'messages')) {
+					if (!Array.isArray(aliases) && typeof aliases !== 'string') throw 'Invalid alias type - Must be a string or an array';
+					data.aliases = Array.isArray(aliases) ? aliases : [aliases];
+					for (const alias of aliases) {
+						if (typeof alias !== 'string') throw 'Invalid alias - Must be a string';
+						if (alias.length > 32) throw 'Alias is too long - Must be less than 32 characters';
+						if (alias.includes(' ')) throw 'Alias cannot contain spaces';
+					}
+				}
 
 				switch (module) {
 					case 'messages':
 						if (!data.name) throw 'No name property found';
 						if (!data.description) throw 'No description property found';
 						addComponent(client[module], data.name, data);
+						for (const alias of data.aliases) {
+							addComponent(client[module], alias, data);
+						}
 						break;
 					case 'commands':
 						if (!data.data) throw 'No data property found';
 						addComponent(client[module], data.data.name, data);
+						for (const alias of data.aliases) {
+							addComponent(client[module], alias, { ...data, data: { ...data.data, name: alias } });
+						}
 						break;
 					case 'buttons':
 					case 'menus':
 					case 'modals':
 						if (!data.customID) throw 'No custom ID has been set';
-						if (!Array.isArray(data.customID) && typeof data.customID !== 'string') throw 'Invalid custom ID type - Must be string';
+						if (typeof data.customID !== 'string') throw 'Invalid custom ID type - Must be string';
 						addComponent(client[module], data.customID, data);
 						break;
 				}
@@ -82,7 +100,7 @@ module.exports = function (client, folder = null) {
 			}
 
 		}
-		client.logs.debug(`Loaded ${files.length} ${module}`)
+		client.logs.debug(`Loaded ${client[module].size} ${module}`)
 	}
 };
 
@@ -99,10 +117,8 @@ function CheckPerms(perms, type) {
 function addComponent(map, id, data) {
 	const duplicateIDs = [];
 
-	if (typeof id === 'string') {
-		if (map.has(id)) duplicateIDs.push(id);
-		map.set(id, Object.assign(data, { customID: id }));
-	}
+	if (map.has(id)) duplicateIDs.push(id);
+	map.set(id, data);
 
 	if (duplicateIDs.length > 0) throw `Duplicate IDs found: ${duplicateIDs.join(', ')}`;
 }
