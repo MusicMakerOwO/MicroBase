@@ -54,6 +54,7 @@ function getPackages(file) {
 function npmCommand(command) {
 	try {
 		execSync(command, { stdio: 'inherit' });
+		console.log();
 	} catch (error) {
 		console.error(error.message);
 		console.warn("One or more packages could not be found in the npm registry");
@@ -77,7 +78,6 @@ function managePackages() {
 	const filteredRequiredPackages = requiredPackages.filter(filterPackages);
 
 	const unusedPackages = installedPackages.filter(pkg => !filteredRequiredPackages.includes(pkg));
-	// const missingPackages = filteredRequiredPackages.filter(pkg => !installedPackages.includes(pkg));
 	const missingPackages = [];
 	for (const pkg of filteredRequiredPackages) {
 		const cleanName = pkg.startsWith('@') ? pkg : pkg.split('/')[0];
@@ -91,12 +91,12 @@ function managePackages() {
 	}
 
 	if (unusedPackages.length) {
-		console.warn('Unused packages found in package.json: ' + unusedPackages.join(", "))
+		console.warn('Unused packages found package.json : ' + unusedPackages.join(", "))
 		npmCommand(`npm uninstall ${unusedPackages.join(" ")}`)
 	}
 
 	if (missingPackages.length) {
-		console.error('Missing packages found in package.json: ' + missingPackages.join(", "))
+		console.error('Found missing packages : ' + missingPackages.join(", "))
 		npmCommand(`npm install ${missingPackages.join(" ")}`)
 	}
 }
