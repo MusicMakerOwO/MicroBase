@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { inspect } = require('node:util');
 
 const color = {
@@ -88,3 +89,39 @@ function custom(message, hexColor) {
 }
 
 module.exports = { getTimestamp, info, warn, error, success, debug, deleted, updated, created, custom };
+
+// run when you first require() this file
+// If you delete it at runtime things will break but that's on you lol
+if (!fs.existsSync(`${__dirname}/../logs/`)) {
+	fs.mkdirSync(`${__dirname}/../logs/`);
+}
+
+let LAST_CHECK = 0;
+let NEWEST_LOG = '';
+function GetLatestLogFile() {
+	if (Date.now() - LAST_CHECK < 1000 * 60 * 5) return NEWEST_LOG;
+	const files = fs.readdirSync(`${__dirname}/../logs/`);
+	const logs = files.filter(file => file.endsWith('.txt'));
+	const dates = logs.map(log => log.split('.').shift()).sort((a, b) => new Date(b) - new Date(a));
+	const newest = dates.shift();
+
+	// if there is none for todays date create a new file
+	const today = new Date().toISOString().split('T').shift();
+	if (newest !== today) {
+		fs.writeFileSync(`${__dirname}/../logs/${today}.txt`, '');
+		if (files.length >= 7) {
+			fs.unlinkSync(`${__dirname}/../logs/${dates.pop()}.txt`);
+		}
+		newest = today;
+	}
+
+	NEWEST_LOG = `${__dirname}/../logs/${newest}.txt`;
+	LAST_CHECK = Date.now();
+	return NEWEST_LOG;
+}
+
+const old_write = process.stdout.write.bind(process.stdout);
+process.stdout.write = function (data) {
+	old_write(data);
+	fs.appendFileSync(GetLatestLogFile(), data.replace(/\x1b\[[0-9;]*m/g, ''));
+}
