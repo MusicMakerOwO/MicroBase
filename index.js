@@ -1,5 +1,7 @@
-require('./utils/ProcessHandlers.js')();
-require('./utils/InteractionOverrides.js')();
+require('./utils/CheckPackages')();
+require('./utils/Overrides/Interactions')();
+require('./utils/Overrides/InteractionEvent')();
+require('./utils/ProcessHandlers')();
 
 const { Client } = require('discord.js');
 const client = new Client({
@@ -12,7 +14,8 @@ const client = new Client({
 
 client.config = require('./config.json');
 client.logs = require('./utils/Logs.js');
-client.cooldowns = new Map();		
+client.cooldowns = new Map();
+client.activeCollectors = new Map(); // <messageID, collector>	
 
 require('./utils/ComponentLoader.js')(client);
 require('./utils/EventLoader.js')(client);
