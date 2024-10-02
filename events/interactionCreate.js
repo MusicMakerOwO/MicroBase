@@ -3,9 +3,20 @@ const CheckUserAccess = require('../utils/Checks/CheckUserAccess');
 const CheckPermissions = require('../utils/Checks/CheckPermissions');
 const CheckCooldown = require('../utils/Checks/CheckCooldown');
 
+const Collector = require('../utils/Overrides/Collector');
+
+// const collector = interaction.createCollector();
+// collector.on('collect', ...);
+function createCollector() {
+	return new Collector(this.client, this);
+}
+
 module.exports = {
 	name: 'interactionCreate',
 	execute: async function (client, interaction) {
+
+		Object.assign(interaction, { createCollector });
+
 		const BoundHandler = InteractionHandler.bind(null, client, interaction);
 
 		switch (interaction.type) {
