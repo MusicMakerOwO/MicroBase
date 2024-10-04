@@ -1,7 +1,7 @@
 {
-    "TOKEN": "",
-    "APP_ID": "",
-    "DEV_GUILD_ID": "",
+	"TOKEN": "",
+	"APP_ID": "",
+	"DEV_GUILD_ID": "",
 
 	"PREFIX": "!"
 }
