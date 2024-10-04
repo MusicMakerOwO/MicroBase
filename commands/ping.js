@@ -11,7 +11,7 @@ module.exports = {
 	},
 	execute: async function(interaction, client) {
 		await interaction.deferReply({ ephemeral: true, content: 'Pong!' });
-		await interaction.reply({ content: 'Pong again!', ephemeral: true });
+		await interaction.reply({ content: 'Pong again!', hidden: true });
 		await interaction.reply('This is pretty cool lol');
 	}
 }
