@@ -1,7 +1,7 @@
 const fs = require("node:fs");
 const { execSync } = require("node:child_process");
 
-const IGNORED_FOLDERS = ['node_modules', '.git'];
+const IGNORED_FOLDERS = ['node_modules', '.git', '.npm', '.cache']
 
 /* {
 	path: string

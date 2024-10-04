@@ -35,6 +35,8 @@ class InteractionOverrides {
 	async reply(options) {
 		if (this.deferred) return this.editReply(options);
 		if (this.replied) return this.followUp(options);
+		
+		if (typeof options === 'string') options = { content: options };
 		options.ephemeral = options.hidden ?? options.ephemeral ?? false;
 
 		const messagePayload = options instanceof MessagePayload ? options : MessagePayload.create(this, options);
