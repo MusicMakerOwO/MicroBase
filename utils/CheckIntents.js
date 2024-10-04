@@ -1,4 +1,11 @@
 const { GatewayIntentBits } = require('discord-api-types/v10');
+const { BitField } = require('discord.js');
+
+// Why does DJS have to make this difficult?
+// Have to recreate the BitField class since they don't export it
+class IntentsBitField extends BitField {
+	static Flags = GatewayIntentBits;
+}
 
 const REQUIRED_INTENTS = {
 	'guildCreate': GatewayIntentBits.Guilds,
@@ -85,15 +92,25 @@ module.exports = function (client) {
 
 	if (missingIntents.size === 0) return;
 
+	// Some fancy lookup stuff lol
+	// We flip the table around so we can lookup names from bits
 	const EventNames = Object.fromEntries( Object.entries(GatewayIntentBits).map(([key, value]) => [value, key]) ); // flip key and value for fasater lookup
-	const missingIntentNames = [...missingIntents].map(bit => {
+	const missingIntentNames = Array.from(missingIntents).map(bit => {
 		return EventNames[bit] ?? 'unknown';
 	});
 
 	// Apply missing intents
-	const newIntents = intents | Array.from(missingIntents).reduce((acc, bit) => acc | bit, 0);
-	client.options.intents.bitfield = BigInt(newIntents);
+	const newIntents = intents | Array.from(missingIntents).reduce((acc, bit) => acc | bit, intents); 
 
-	client.logs.warn(`Missing intents: ${missingIntentNames.join(', ')}`);
-	client.logs.warn(`They have been applied automatically`);
+	// DJS makes this hard so have to recreate the bitfield and overwrite the client options
+	const newBitField = new IntentsBitField(0);
+	for (let i = 0; i < 32; i++) {
+		const bit = 1 << i;
+		if ((newIntents & bit) === 0) continue;
+		newBitField.add(EventNames[bit]);
+	}
+	newBitField.add('Guilds'); // Why would you ever leave this out???
+	client.options.intents = newBitField;
+
+	client.logs.warn(`Applied missing intents: ${missingIntentNames.join(', ')}`);
 }
