@@ -35,9 +35,9 @@ const REQUIRED_INTENTS = {
 	'inviteDelete': GatewayIntentBits.GuildInvites,
 	'voiceStateUpdate': GatewayIntentBits.GuildVoiceStates,
 	'presenceUpdate': GatewayIntentBits.GuildPresences,
-	'messageCreate': GatewayIntentBits.GuildMessages | GatewayIntentBits.DirectMessages,
-	'messageUpdate': GatewayIntentBits.GuildMessages | GatewayIntentBits.DirectMessages,
-	'messageDelete': GatewayIntentBits.GuildMessages | GatewayIntentBits.DirectMessages,
+	'messageCreate': [ GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages ],
+	'messageUpdate': [ GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages ],
+	'messageDelete': [ GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages ],
 	'messageDeleteBulk': GatewayIntentBits.GuildMessages,
 	'messageReactionAdd': GatewayIntentBits.GuildMessageReactions,
 	'messageReactionRemove': GatewayIntentBits.GuildMessageReactions,
@@ -70,10 +70,17 @@ module.exports = function (client) {
 
 	const intents = Number(client.options.intents.bitfield);
 	for (const eventName of Object.keys(client._events)) {
-		const requiredBit = REQUIRED_INTENTS[eventName];
-		if (!requiredBit) continue; // custom event
-		if ((intents & requiredBit) > 0) continue; // already have the intent
-		missingIntents.add(requiredBit);
+		const requiredBits = REQUIRED_INTENTS[eventName];
+		if (!requiredBits) continue; // custom event
+		if (Array.isArray(requiredBits)) {
+			for (const bit of requiredBits) {
+				if ((intents & bit) > 0) continue; // already have the intent
+				missingIntents.add(bit);
+			}
+		} else {
+			if ((intents & requiredBits) > 0) continue; // already have the intent
+			missingIntents.add(requiredBits);
+		}
 	}
 
 	if (missingIntents.size === 0) return;
@@ -82,5 +89,11 @@ module.exports = function (client) {
 	const missingIntentNames = [...missingIntents].map(bit => {
 		return EventNames[bit] ?? 'unknown';
 	});
-	client.logs.error(`Missing intents: ${missingIntentNames.join(', ')}`);
+
+	// Apply missing intents
+	const newIntents = intents | Array.from(missingIntents).reduce((acc, bit) => acc | bit, 0);
+	client.options.intents.bitfield = BigInt(newIntents);
+
+	client.logs.warn(`Missing intents: ${missingIntentNames.join(', ')}`);
+	client.logs.warn(`They have been applied automatically`);
 }

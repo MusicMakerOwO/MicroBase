@@ -43,13 +43,14 @@ require('./utils/ComponentLoader.js')(client);
 require('./utils/EventLoader.js')(client);
 require('./utils/RegisterCommands.js')(client);
 
+// This will only check intents loaded by the event loader
+// If they are defined below this point they will not be checked
+require('./utils/CheckIntents.js')(client);
+
 client.logs.info(`Logging in...`);
 client.login(client.config.TOKEN);
 client.on('ready', function () {
 	client.logs.custom(`Logged in as ${client.user.tag}!`, 0x7946ff);
 
-	// It's a weird place but I am assuming by the time it logs in you are finished adding events
-	// Adding events after it runs this function will not get checked
-	require('./utils/CheckIntents.js')(client);
 	require('./utils/FileWatch.js')(client); // listener for hot loading
 });
