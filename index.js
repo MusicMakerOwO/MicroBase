@@ -15,7 +15,29 @@ const client = new Client({
 client.config = require('./config.json');
 client.logs = require('./utils/Logs.js');
 client.cooldowns = new Map();
-client.activeCollectors = new Map(); // <messageID, collector>	
+client.activeCollectors = new Map(); // <messageID, collector>
+
+const errors = [];
+
+if (typeof client.config.TOKEN !== 'string' || client.config.TOKEN.length === 0) {
+	errors.push('Please provide a valid TOKEN in config.json');
+}
+if (typeof client.config.PREFIX !== 'string' || client.config.PREFIX.length === 0) {
+	errors.push('Please provide a valid PREFIX in config.json');
+}
+if (typeof client.config.APP_ID !== 'string' || client.config.APP_ID.length === 0) {
+	errors.push('Please provide a valid APP_ID in config.json');
+}
+if (typeof client.config.DEV_GUILD_ID !== 'string') {
+	errors.push('Please provide a valid DEV_GUILD_ID in config.json');
+}
+
+if (errors.length > 0) {
+	for (const error of errors) {
+		console.error(`[~] ${error}`);
+	}
+	process.exit(1);
+}
 
 require('./utils/ComponentLoader.js')(client);
 require('./utils/EventLoader.js')(client);

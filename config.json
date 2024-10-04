@@ -1,7 +1,7 @@
 {
-    "TOKEN": "YOUR TOKEN HERE",
-    "APP_ID": "YOUR CLIENT ID HERE",
-    "DEV_GUILD_ID": "YOUR SERVER ID HERE",
+    "TOKEN": "",
+    "APP_ID": "",
+    "DEV_GUILD_ID": "",
 
 	"PREFIX": "!"
 }
