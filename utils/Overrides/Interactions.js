@@ -42,7 +42,7 @@ class InteractionOverrides {
 		const messagePayload = options instanceof MessagePayload ? options : MessagePayload.create(this, options);
 
 		if (this.allowCache) {
-			client.responseCache.set(this.commandName ?? this.customId, messagePayload);
+			this.client.responseCache.set(this.commandName ?? this.customId, messagePayload);
 		}
 
 		const { body: data, files } = await messagePayload.resolveBody().resolveFiles();
@@ -84,7 +84,7 @@ class InteractionOverrides {
 		this.replied = true;
 
 		if (this.allowCache) {
-			client.responseCache.set(this.commandName ?? this.customId, messagePayload);
+			this.client.responseCache.set(this.commandName ?? this.customId, options);
 		}
 
 		return msg;
