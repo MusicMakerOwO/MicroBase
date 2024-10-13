@@ -76,7 +76,9 @@ async function InteractionHandler(client, interaction, type) {
 		CheckUserAccess(component.roles, component.users, interaction.member, interaction.user);
 		CheckCooldown(client, interaction.user.id, name, component.cooldown);
 
-		const botMember = interaction.guild?.members.cache.get(client.user.id) ?? await interaction.guild?.members.fetch(client.user.id).catch(() => null);
+		const botMember = interaction.guild === null
+			? null
+			: interaction.guild.members.cache.get(client.user.id) ?? await interaction.guild?.members.fetch(client.user.id).catch(() => null)
 		if (botMember !== null) {
 			// This code will only trigger if
 			// 1) Bot is in the guild (always will)
