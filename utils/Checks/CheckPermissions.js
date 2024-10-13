@@ -3,7 +3,7 @@ const { PermissionsBitField: { Flags: Permissions } } = require('discord.js');
 module.exports = function CheckPermissions(permissionsArray, member) {
 	if (!Array.isArray(permissionsArray) || !member) return;
 
-	const prefix = member.user.id === client.id ? 'I am' : 'You are';
+	const prefix = member.user.id === client.user.id ? 'I am' : 'You are';
 
 	const missingPermissions = [];
 	if (permissionsArray.length === 0) return;
