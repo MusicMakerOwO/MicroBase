@@ -53,22 +53,28 @@ module.exports = {
 async function InteractionHandler(client, interaction, type) {
 
 	const args = interaction.customId?.split("_") ?? [];
-	const name = args.shift();
+	const name = args.shift() ?? interaction.commandName;
 
-	const component = client[type].get(name ?? interaction.commandName);
+	const cachedResponse = client.responseCache.get(name);
+	if (cachedResponse) {
+		await interaction.reply(cachedResponse);
+		return;
+	}
+
+	const component = client[type].get(name);
 	if (!component) {
 		await interaction.reply({
 			content: `There was an error while executing this command!\n\`\`\`Command not found\`\`\``,
 			ephemeral: true
 		}).catch(() => { });
-		client.logs.error(`${type} not found: ${interaction.customId}`);
+		client.logs.error(`${type} not found: ${name}`);
 		return;
 	}
 
 	try {
 		CheckGuildAccess(component.guilds, interaction.guildId);
 		CheckUserAccess(component.roles, component.users, interaction.member, interaction.user);
-		CheckCooldown(client, interaction.user.id, component.customID ?? interaction.commandName, component.cooldown);
+		CheckCooldown(client, interaction.user.id, name, component.cooldown);
 
 		const botMember = interaction.guild?.members.cache.get(client.user.id) ?? await interaction.guild?.members.fetch(client.user.id).catch(() => null);
 		if (botMember !== null) {
@@ -90,12 +96,15 @@ async function InteractionHandler(client, interaction, type) {
 	}
 
 	try {
+		interaction.allowCache = component.cache;
 		if (interaction.isAutocomplete()) {
 			await component.autocomplete(interaction, client, type === 'commands' ? undefined : args);
 		} else {
 			await component.execute(interaction, client, type === 'commands' ? undefined : args);
 		}
 	} catch (error) {
+		// dont save error messages lol
+		interaction.allowCache = false;
 		client.logs.error(error.stack);
 		await interaction.deferReply({ ephemeral: true }).catch(() => { });
 		await interaction.editReply({

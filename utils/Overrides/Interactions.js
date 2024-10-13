@@ -41,6 +41,10 @@ class InteractionOverrides {
 
 		const messagePayload = options instanceof MessagePayload ? options : MessagePayload.create(this, options);
 
+		if (this.allowCache) {
+			client.responseCache.set(this.commandName ?? this.customId, messagePayload);
+		}
+
 		const { body: data, files } = await messagePayload.resolveBody().resolveFiles();
 
 		await this.client.rest.post(Routes.interactionCallback(this.id, this.token), {
@@ -78,6 +82,11 @@ class InteractionOverrides {
 		if (!this.deferred && !this.replied) return this.reply(options);
 		const msg = await this.webhook.editMessage(options.message ?? '@original', options);
 		this.replied = true;
+
+		if (this.allowCache) {
+			client.responseCache.set(this.commandName ?? this.customId, messagePayload);
+		}
+
 		return msg;
 	}
 

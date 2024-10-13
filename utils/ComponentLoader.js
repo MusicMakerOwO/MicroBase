@@ -71,6 +71,8 @@ module.exports = function (client, folder = null) {
 					}
 				}
 
+				if (data.cache && typeof data.cache !== 'boolean') throw 'Invalid cache type - Must be a boolean';
+
 				switch (module) {
 					case 'messages':
 						if (!data.name) throw 'No name property found';
