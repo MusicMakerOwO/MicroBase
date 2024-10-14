@@ -1,7 +1,7 @@
-require('./utils/CheckPackages')();
-require('./utils/Overrides/Interactions')();
-require('./utils/Overrides/InteractionEvent')();
-require('./utils/ProcessHandlers')();
+require('./utils/CheckPackages.js')();
+require('./utils/Overrides/Interactions.js')();
+require('./utils/Overrides/InteractionEvent.js')();
+require('./utils/ProcessHandlers.js')();
 
 const { Client } = require('discord.js');
 const client = new Client({
