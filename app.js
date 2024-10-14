@@ -1,4 +1,16 @@
-require('./utils/CheckPackages.js')();
+// if this isn't a child process, exit
+if (!process.send) {
+	console.error('This bot cannot be run without a shard manager, run index.js instead');
+	process.exit(1);
+}
+
+// node app.js 0
+const shardID = parseInt(process.argv[2]); // possibly NaN if not specified
+if (isNaN(shardID)) {
+	console.error(`Invalid shard ID provided : ${process.argv[2]}`);
+	process.exit(1);
+}
+
 require('./utils/Overrides/Interactions.js')();
 require('./utils/Overrides/InteractionEvent.js')();
 require('./utils/ProcessHandlers.js')();
@@ -12,33 +24,12 @@ const client = new Client({
 	]
 });
 
+// Type checking is done in index.js
 client.config = require('./config.json');
 client.logs = require('./utils/Logs.js');
 client.cooldowns = new Map();
 client.activeCollectors = new Map(); // <messageID, collector>
 client.responseCache = new Map(); // <commandName, response>
-
-const errors = [];
-
-if (typeof client.config.TOKEN !== 'string' || client.config.TOKEN.length === 0) {
-	errors.push('Please provide a valid TOKEN in config.json');
-}
-if (typeof client.config.PREFIX !== 'string' || client.config.PREFIX.length === 0) {
-	errors.push('Please provide a valid PREFIX in config.json');
-}
-if (typeof client.config.APP_ID !== 'string' || client.config.APP_ID.length === 0) {
-	errors.push('Please provide a valid APP_ID in config.json');
-}
-if (typeof client.config.DEV_GUILD_ID !== 'string') {
-	errors.push('Please provide a valid DEV_GUILD_ID in config.json');
-}
-
-if (errors.length > 0) {
-	for (const error of errors) {
-		console.error(`[~] ${error}`);
-	}
-	process.exit(1);
-}
 
 require('./utils/ComponentLoader.js')(client);
 require('./utils/EventLoader.js')(client);
