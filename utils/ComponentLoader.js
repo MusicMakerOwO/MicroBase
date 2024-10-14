@@ -3,7 +3,7 @@ const { existsSync } = require('node:fs');
 
 const Logs = require('./Logs.js');
 
-const { PermissionsBitField: { Flags: Permissions } } = require('discord.js');
+const Permissions = require('./Permissions.js');
 
 const modules = [
 	'commands',
