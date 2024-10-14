@@ -1,8 +1,8 @@
-const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord-api-types/v10');
+// const { REST } = require('@discordjs/rest');
+const https = require('node:https');
 const Logs = require('./Logs.js');
 
-module.exports = (client) => {
+module.exports = async function (client) {
 
 	Logs.info('Started refreshing application (/) commands.');
 
@@ -30,24 +30,59 @@ module.exports = (client) => {
 		Logs.warn(`You have dev commands but no DEV_GUILD_ID in config.json - These will not be registered!`);
 	}
 
-	const rest = new REST({ version: '10' }).setToken(client.config.TOKEN);
+	// This is all that the Routes.applicationCommands() method does, but we don't need the extra dependency if it's literally just a string lmao
+	// https://discord.com/developers/docs/tutorials/upgrading-to-application-commands#registering-commands
+	const route = `https://discord.com/api/v10/applications/${client.config.APP_ID}/commands`;
+	const devRoute = `https://discord.com/api/v10/applications/${client.config.APP_ID}/guilds/${client.config.DEV_GUILD_ID}/commands`;
 	try {
 		// public commands
-		rest.put(
-			Routes.applicationCommands(client.config.APP_ID),
-			{ body: commands },
-		);
+		// rest.put(
+		// 	route,
+		// 	{ body: commands },
+		// );
+		await MakeRequest('PUT', route, commands, client.config.TOKEN);
 
 		if (typeof client.config.DEV_GUILD_ID === 'string' && devCommands.length > 1) {
 			// dev commands
-			rest.put(
-				Routes.applicationGuildCommands(client.config.APP_ID, client.config.DEV_GUILD_ID),
-				{ body: devCommands },
-			);
+			// rest.put(
+			// 	devRoute,
+			// 	{ body: devCommands },
+			// );
+			await MakeRequest('PUT', devRoute, devCommands, client.config.TOKEN);
 		}
 
 		Logs.info('Successfully reloaded application (/) commands.');
 	} catch (error) {
 		Logs.error(error);
 	}
+}
+
+async function MakeRequest(method, route, body, token) {
+	return new Promise((resolve, reject) => {
+		const req = https.request(route, {
+			method,
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bot ${token}`
+			}
+		});
+		req.on('response', res => {
+			let data = '';
+			res.on('data', chunk => {
+				data += chunk;
+			});
+			res.on('end', () => {
+				try {
+					resolve(JSON.parse(data));
+				} catch(error) {
+					reject(error);
+				}
+			});
+		});
+		req.on('error', error => {
+			reject(error);
+		});
+		if (body) req.write(JSON.stringify(body));
+		req.end();
+	});
 }

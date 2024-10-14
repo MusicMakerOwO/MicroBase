@@ -1,4 +1,4 @@
-const { PermissionsBitField: { Flags: Permissions } } = require('discord.js');
+const Permissions = require('../Permissions.js');
 
 module.exports = function CheckPermissions(permissionsArray, member) {
 	if (!Array.isArray(permissionsArray) || !member) return;
