@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const Debounce = require('./Debounce.js');
+const Logs = require('./Logs.js');
 
 const FOLDERS = [
 	'commands',
@@ -13,7 +14,7 @@ const FOLDERS = [
 module.exports = function (client) {
 	for (const folder of FOLDERS) {
 		if (!fs.existsSync(`${__dirname}/../${folder}`)) {
-			client.logs.warn(`[RELOAD] No ${folder} folder found - Skipping...`);
+			Logs.warn(`[RELOAD] No ${folder} folder found - Skipping...`);
 			continue;
 		}
 

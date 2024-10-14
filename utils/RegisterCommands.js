@@ -1,9 +1,10 @@
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v10');
+const Logs = require('./Logs.js');
 
 module.exports = (client) => {
 
-	client.logs.info('Started refreshing application (/) commands.');
+	Logs.info('Started refreshing application (/) commands.');
 
 	const commands = [];
 	const devCommands = [];
@@ -21,12 +22,12 @@ module.exports = (client) => {
 				commands.push(commandData);
 			}
 		} catch(error) {
-			client.logs.error(`[REGISTER] Failed to register ${command.data.name}: ${error}`);
+			Logs.error(`[REGISTER] Failed to register ${command.data.name}: ${error}`);
 		}
 	}
 
 	if (devCommands.length > 0 && !client.config.DEV_GUILD_ID) {
-		client.logs.warn(`You have dev commands but no DEV_GUILD_ID in config.json - These will not be registered!`);
+		Logs.warn(`You have dev commands but no DEV_GUILD_ID in config.json - These will not be registered!`);
 	}
 
 	const rest = new REST({ version: '10' }).setToken(client.config.TOKEN);
@@ -45,8 +46,8 @@ module.exports = (client) => {
 			);
 		}
 
-		client.logs.info('Successfully reloaded application (/) commands.');
+		Logs.info('Successfully reloaded application (/) commands.');
 	} catch (error) {
-		client.logs.error(error);
+		Logs.error(error);
 	}
 }

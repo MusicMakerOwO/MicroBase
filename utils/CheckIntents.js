@@ -1,5 +1,6 @@
 const { GatewayIntentBits } = require('discord-api-types/v10');
 const { BitField } = require('discord.js');
+const Logs = require('./Logs.js');
 
 // Why does DJS have to make this difficult?
 // Have to recreate the BitField class since they don't export it
@@ -112,5 +113,5 @@ module.exports = function (client) {
 	newBitField.add('Guilds'); // Why would you ever leave this out???
 	client.options.intents = newBitField;
 
-	client.logs.warn(`Applied missing intents: ${missingIntentNames.join(', ')}`);
+	Logs.warn(`Applied missing intents: ${missingIntentNames.join(', ')}`);
 }

@@ -1,6 +1,8 @@
 const ReadFolder = require('./ReadFolder.js');
 const { existsSync } = require('node:fs');
 
+const Logs = require('./Logs.js');
+
 const { PermissionsBitField: { Flags: Permissions } } = require('discord.js');
 
 const modules = [
@@ -18,7 +20,7 @@ module.exports = function (client, folder = null) {
 		client[module] = new Map();
 
 		if (!existsSync(`${__dirname}/../${module}`)) {
-			client.logs.warn(`No ${module} folder found - Skipping...`);
+			Logs.warn(`No ${module} folder found - Skipping...`);
 			continue;
 		}
 
@@ -98,11 +100,11 @@ module.exports = function (client, folder = null) {
 						break;
 				}
 			} catch (error) {
-				client.logs.error(`[${module.toUpperCase()}] Failed to load ./${filePath}: ${error.stack || error}`);
+				Logs.error(`[${module.toUpperCase()}] Failed to load ./${filePath}: ${error.stack || error}`);
 			}
 
 		}
-		client.logs.debug(`Loaded ${client[module].size} ${module}`)
+		Logs.debug(`Loaded ${client[module].size} ${module}`)
 	}
 };
 
