@@ -1,6 +1,7 @@
 // const { REST } = require('@discordjs/rest');
 const https = require('node:https');
 const Logs = require('./Logs.js');
+const config = require('../config.json');
 
 module.exports = async function (client) {
 
@@ -26,29 +27,29 @@ module.exports = async function (client) {
 		}
 	}
 
-	if (devCommands.length > 0 && !client.config.DEV_GUILD_ID) {
+	if (devCommands.length > 0 && !config.DEV_GUILD_ID) {
 		Logs.warn(`You have dev commands but no DEV_GUILD_ID in config.json - These will not be registered!`);
 	}
 
 	// This is all that the Routes.applicationCommands() method does, but we don't need the extra dependency if it's literally just a string lmao
 	// https://discord.com/developers/docs/tutorials/upgrading-to-application-commands#registering-commands
-	const route = `https://discord.com/api/v10/applications/${client.config.APP_ID}/commands`;
-	const devRoute = `https://discord.com/api/v10/applications/${client.config.APP_ID}/guilds/${client.config.DEV_GUILD_ID}/commands`;
+	const route = `https://discord.com/api/v10/applications/${config.APP_ID}/commands`;
+	const devRoute = `https://discord.com/api/v10/applications/${config.APP_ID}/guilds/${config.DEV_GUILD_ID}/commands`;
 	try {
 		// public commands
 		// rest.put(
 		// 	route,
 		// 	{ body: commands },
 		// );
-		await MakeRequest('PUT', route, commands, client.config.TOKEN);
+		await MakeRequest('PUT', route, commands, config.TOKEN);
 
-		if (typeof client.config.DEV_GUILD_ID === 'string' && devCommands.length > 1) {
+		if (typeof config.DEV_GUILD_ID === 'string' && devCommands.length > 1) {
 			// dev commands
 			// rest.put(
 			// 	devRoute,
 			// 	{ body: devCommands },
 			// );
-			await MakeRequest('PUT', devRoute, devCommands, client.config.TOKEN);
+			await MakeRequest('PUT', devRoute, devCommands, config.TOKEN);
 		}
 
 		Logs.info('Successfully reloaded application (/) commands.');
@@ -66,21 +67,22 @@ async function MakeRequest(method, route, body, token) {
 				'Authorization': `Bot ${token}`
 			}
 		});
+		req.on('error', error => reject(error));
+		req.on('timeout', () => reject(new Error('Request timed out')));
 		req.on('response', res => {
-			let data = '';
-			res.on('data', chunk => {
-				data += chunk;
-			});
+			const data = [];
+			res.on('data', data.push.bind(data));
 			res.on('end', () => {
 				try {
-					resolve(JSON.parse(data));
+					if (res.statusCode < 200 || res.statusCode >= 300) {
+						const response = JSON.parse(data.join(''));
+						throw new Error(`[ Discord API : ${res.statusCode}] ${response.message}`);
+					}
+					resolve(JSON.parse(data.join('')));
 				} catch(error) {
 					reject(error);
 				}
 			});
-		});
-		req.on('error', error => {
-			reject(error);
 		});
 		if (body) req.write(JSON.stringify(body));
 		req.end();
