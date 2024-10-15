@@ -36,9 +36,8 @@ module.exports = function (client) {
 
 			client[data.once ? 'once' : 'on'](data.name, data.execute.bind(null, client));
 		} catch (error) {
-			Logs.error(`Failed to load event ${path}: ${error}`);
+			Logs.error(`Failed to load event ${path}`);
+			Logs.error(error);
 		}
 	}
-	
-	Logs.debug(`Loaded ${files.length} events!`);
 }
