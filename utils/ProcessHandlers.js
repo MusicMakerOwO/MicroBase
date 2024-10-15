@@ -6,7 +6,7 @@ module.exports = function () {
 	process.on('SIGINT', () => {
 		console.log();
 		log.error('SIGINT: Exiting...');
-		process.reallyExit(1);
+		process.reallyExit(0);
 	});
 
 	// Standard crash
@@ -17,7 +17,7 @@ module.exports = function () {
 	// Killed process
 	process.on('SIGTERM', () => {
 		log.error('SIGTERM: Exiting...');
-		process.reallyExit(1);
+		process.reallyExit(0);
 	});
 
 	// Standard crash
