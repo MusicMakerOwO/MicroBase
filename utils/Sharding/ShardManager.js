@@ -102,6 +102,8 @@ module.exports = class ShardManager {
 				request.reject(data);
 				break;
 			default:
+				request.reject(`Unknown message type: ${type}`);
+				break;
 		}
 	}
 }
