@@ -265,19 +265,6 @@ function CreateShard(shardID, shardCount = shards.size) {
 	shards.set(shardID, shard);
 }
 
-( async () => {
-	await DynamicRegister();
-	const shardCount = await GetShardCount();
-	if (shardCount <= 0) {
-		console.warn('[~] Shard count is 0, nothing to do!');
-		process.exit(0);
-	}
-	console.warn(`[~] Spawning ${shardCount} shards...`);
-	for (let i = 0; i < shardCount * SHARDS_PER_CLUSTER; i += SHARDS_PER_CLUSTER) {
-		CreateShard(i, shardCount);
-	}
-})();
-
 function ClearLine() {
 	process.stdout.write('\x1b[2K'); // clear current line
 	process.stdout.write('\x1b[0G'); // move cursor back to beginning
@@ -293,7 +280,7 @@ function BindListeners(child, shardID) {
 		shards.delete(shardID);
 		if (code !== 0) {
 			console.error(`[~] Restarting shard ${shardID}...`);
-			const newShard = CreateShard(shardID);
+			const newShard = CreateShard(shardID, shards.size + 1);
 			shards.set(shardID, newShard);
 		}
 	});
@@ -429,3 +416,19 @@ process.on('message', message => {
 			console.warn(`[~] Unknown message type: ${type}`);
 	}
 });
+
+// This is actually the main entry point, everything else is just setup o_O
+( async () => {
+	await DynamicRegister(); // register commands if needed
+
+	const shardCount = await GetShardCount(); // get shard count based on guilds and user input
+	if (shardCount <= 0) {
+		console.warn('[~] Shard count is 0, nothing to do!');
+		process.exit(0);
+	}
+
+	console.warn(`[~] Spawning ${shardCount} shards...`);
+	for (let i = 0; i < shardCount * SHARDS_PER_CLUSTER; i += SHARDS_PER_CLUSTER) {
+		CreateShard(i, shardCount);
+	}
+})();
