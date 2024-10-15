@@ -31,9 +31,30 @@ client.cooldowns = new Map();
 client.activeCollectors = new Map(); // <messageID, collector>
 client.responseCache = new Map(); // <commandName, response>
 
-require('./utils/ComponentLoader.js')(client);
-require('./utils/EventLoader.js')(client);
-require('./utils/RegisterCommands.js')(client);
+const ComponentLoader = require('./utils/ComponentLoader.js');
+const EventLoader = require('./utils/EventLoader.js');
+
+const modules = [
+	'commands',
+	'buttons',
+	'menus',
+	'modals',
+	'messages',
+];
+
+for (let i = 0; i < modules.length; i++) {
+	const module = modules[i];
+	ComponentLoader(client, module);
+	client.logs.debug(`Loaded ${client[module].size} ${module}`);
+}
+
+EventLoader(client);
+let ListenerCount = 0;
+for (const listeners of Object.values(client._events)) {
+	ListenerCount += listeners.length;
+}
+// DJS adds a default 'shardDisconnect' listener that we ignore
+client.logs.debug(`Loaded ${ListenerCount - 1} events`);
 
 // This will only check intents loaded by the event loader
 // If they are defined below this point they will not be checked
