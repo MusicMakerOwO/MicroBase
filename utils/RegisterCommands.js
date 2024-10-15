@@ -1,12 +1,7 @@
-// const { REST } = require('@discordjs/rest');
 const https = require('node:https');
-const Logs = require('./Logs.js');
 const config = require('../config.json');
 
 module.exports = async function (client) {
-
-	Logs.info('Started refreshing application (/) commands.');
-
 	const commands = [];
 	const devCommands = [];
 	const commandNames = [];
@@ -23,12 +18,12 @@ module.exports = async function (client) {
 				commands.push(commandData);
 			}
 		} catch(error) {
-			Logs.error(`[REGISTER] Failed to register ${command.data.name}: ${error}`);
+			console.error(`[REGISTER] Failed to register ${command.data.name}: ${error}`);
 		}
 	}
 
 	if (devCommands.length > 0 && !config.DEV_GUILD_ID) {
-		Logs.warn(`You have dev commands but no DEV_GUILD_ID in config.json - These will not be registered!`);
+		console.warn(`You have dev commands but no DEV_GUILD_ID in config.json - These will not be registered!`);
 	}
 
 	// This is all that the Routes.applicationCommands() method does, but we don't need the extra dependency if it's literally just a string lmao
@@ -37,24 +32,14 @@ module.exports = async function (client) {
 	const devRoute = `https://discord.com/api/v10/applications/${config.APP_ID}/guilds/${config.DEV_GUILD_ID}/commands`;
 	try {
 		// public commands
-		// rest.put(
-		// 	route,
-		// 	{ body: commands },
-		// );
 		await MakeRequest('PUT', route, commands, config.TOKEN);
 
 		if (typeof config.DEV_GUILD_ID === 'string' && devCommands.length > 1) {
 			// dev commands
-			// rest.put(
-			// 	devRoute,
-			// 	{ body: devCommands },
-			// );
 			await MakeRequest('PUT', devRoute, devCommands, config.TOKEN);
 		}
-
-		Logs.info('Successfully reloaded application (/) commands.');
 	} catch (error) {
-		Logs.error(error);
+		console.error(error);
 	}
 }
 
