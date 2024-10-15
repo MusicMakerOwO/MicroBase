@@ -1,6 +1,7 @@
 const https = require('node:https');
-const fs = require('node:fs');
 
+// Won't catch any missing packages in this file since it is pre-compiled
+// It will work on the second run, so either run this twice or install manually
 require('./utils/CheckPackages.js')();
 
 const CRC32 = require('./utils/crc32.js');
