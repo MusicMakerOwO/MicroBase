@@ -1,17 +1,44 @@
 const https = require('node:https');
+const ChildProcess = require('node:child_process'); // shards are spawned as child processes
+
+const MIN_SHARDS = 1;
+const MAX_SHARDS = 16;
+const SHARDS_PER_CLUSTER = 4;
+const GUILDS_PER_SHARD = 1000;
+const GUILDS_PER_CLUSTER = SHARDS_PER_CLUSTER * GUILDS_PER_SHARD;
 
 // Won't catch any missing packages in this file since it is pre-compiled
 // It will work on the second run, so either run this twice or install manually
 require('./utils/CheckPackages.js')();
 
+const MessageTypes = require('./utils/Sharding/MessageTypes.js'); // enum for sharding communication
+/*
+module.exports = {
+	BROADCAST_EVAL: 0,
+	BROADCAST_EVAL_RESULT: 1,
+	FETCH_CLIENT_VALUE: 2,
+	SHARD_READY: 3,
+	PERFORMANCE_METRICS: 4,
+	LOG: 5,
+	SHUTDOWN: 6,
+
+	// IPC error codes
+	IPC_UNKNOWN_TYPE: 100,
+	IPC_INVALID_PAYLOAD: 101,
+	IPC_UNKNOWN_REQUEST_ID: 102,
+	IPC_UNKNOWN_ERROR: 199
+}
+*/
+
+const Prompt = require('./utils/Prompt.js');
 const CRC32 = require('./utils/crc32.js');
 const ComponentLoader = require('./utils/ComponentLoader.js');
-const RegisterCommands = require('./utils/RegisterCommands.js');
 
 // We don't want to run this on the bot instance or it will run for each and every shard lol
+const RegisterCommands = require('./utils/RegisterCommands.js');
+
 
 const config = require('./config.json');
-
 const errors = [];
 
 if (typeof config.TOKEN !== 'string' || config.TOKEN.length === 0) {
@@ -34,13 +61,13 @@ if (errors.length > 0) {
 	process.exit(1);
 }
 
-async function MakeRequest(method, route, body, token) {
+async function MakeRequest(method, route, body) {
 	return new Promise((resolve, reject) => {
 		const request = https.request(route, {
 			method: method,
 			headers: {
 				'Content-Type': 'application/json',
-				'Authorization': `Bot ${token}`
+				'Authorization': `Bot ${config.TOKEN}`
 			}
 		});
 		request.on('error', error => reject(error));
@@ -112,7 +139,6 @@ function NeedsRegister(oldCommands, newCommands) {
 	return false;
 }
 
-DynamicRegister();
 async function DynamicRegister() {
 	console.log('Checking commands, this may take a second...');
 	const oldCommands = {};
@@ -134,7 +160,7 @@ async function DynamicRegister() {
 		}
 	}
 
-	const registeredCommands = await MakeRequest('GET', `https://discord.com/api/v10/applications/${config.APP_ID}/commands`, null, config.TOKEN); // Array
+	const registeredCommands = await MakeRequest('GET', `https://discord.com/api/v10/applications/${config.APP_ID}/commands`, null); // Array
 
 	if (registeredCommands.length === 0) {
 		await RegisterCommands(components);
@@ -149,7 +175,7 @@ async function DynamicRegister() {
 	// Only check dev commands if no change is needed, this prevents unnecessary API calls
 	// Won't matter if dev commands are different if the public commands are also different, still need to register
 	if (!needsRegister && config.DEV_GUILD_ID.length > 0) {
-		const registeredDevCommands = await MakeRequest('GET', `https://discord.com/api/v10/applications/${config.APP_ID}/guilds/${config.DEV_GUILD_ID}/commands`, null, config.TOKEN); // Array
+		const registeredDevCommands = await MakeRequest('GET', `https://discord.com/api/v10/applications/${config.APP_ID}/guilds/${config.DEV_GUILD_ID}/commands`, null); // Array
 
 		if (registeredDevCommands.length === 0) {
 			RegisterCommands(components);
@@ -171,3 +197,235 @@ async function DynamicRegister() {
 		console.log('No changes detected, skipping registration');
 	}
 }
+
+async function GetGuildCount() {
+	const guilds = await MakeRequest('GET', `https://discord.com/api/v10/users/@me/guilds`, null);
+	return guilds.length;
+}
+
+async function GetShardCount() {
+	const guildCount = await GetGuildCount();
+	let custerCount = Math.ceil(guildCount / GUILDS_PER_SHARD);
+	let shardCount = Math.ceil(custerCount / SHARDS_PER_CLUSTER);
+
+	if (shardCount < MIN_SHARDS) {
+		shardCount = MIN_SHARDS;
+	}
+
+	if (shardCount > MAX_SHARDS) {
+		const recommendedShards = Math.ceil(guildCount / GUILDS_PER_CLUSTER);
+
+		console.error(`You have exceeded the maximum shard count of ${MAX_SHARDS}, you should consider increasing the limit.`);
+		console.error(`This will cause issues with your bot if you do not resolve this!`);
+		console.warn(`Current guild count: ${guildCount}`);
+		console.warn(`Current shard count: ${shardCount}`);
+		console.warn(`Max shard count: ${MAX_SHARDS}`);
+		console.error('-'.repeat(10), 'Recommendations', '-'.repeat(10));
+		console.warn(`Shard count: ${recommendedShards}`);
+		console.warn(`Clusters per shard: ${SHARDS_PER_CLUSTER}`);
+		console.warn(`Guilds per cluster: ${GUILDS_PER_SHARD}`);
+		console.warn(`Guilds per shard: ${GUILDS_PER_CLUSTER}`);
+		console.error('-'.repeat(13), 'Settings', '-'.repeat(13));
+		console.error(`SHARDS_PER_CLUSTER: ${SHARDS_PER_CLUSTER}`);
+		console.error(`GUILDS_PER_SHARD: ${GUILDS_PER_SHARD}`);
+		console.error(`GUILDS_PER_CLUSTER: ${GUILDS_PER_CLUSTER}`);
+		console.error('--'.repeat(18));
+		const response = await Prompt(`\x1b[34mWould you like to use the recommended \x1b[0mshard count of ${recommendedShards}\x1b[34m? (Y/n/c)\x1b[0m `);
+		
+		if (response.toLowerCase() === 'c') {
+			process.exit(0);
+		}
+
+		if (response.toLowerCase() === 'n') {
+			return MAX_SHARDS;
+		} else {
+			return recommendedShards;
+		}
+	}
+
+	return shardCount;
+}
+
+const shards = new Map(); // <shardID, process> - shards are spawned as child processes
+
+function CreateShard(shardID, shardCount = shards.size) {
+	const shard = ChildProcess.fork('./app.js', [SHARDS_PER_CLUSTER, shardID, shardCount], {
+		// JSON serialization allows for transmission of primitive types but not much else
+		// Things like numbers, strings, booleans, arrays, and objects are fine
+		// But if you need more complex data, like functions, you will need to convert it to a primitive
+		// Either stringify if or convert it to a simpile object, ie. Map -> Object
+		serialization: 'json',
+		silent: true, // logs handled by master process
+		stdio: 'pipe', // pipe stdout and stderr, doesn't go straight to console so we can intercept it and log it
+	});
+	shard.shutdown = () => {
+		if (shard.connected) shard.send({ type: MessageTypes.SHUTDOWN });
+	}
+	BindListeners(shard, shardID);
+	shards.set(shardID, shard);
+}
+
+( async () => {
+	await DynamicRegister();
+	const shardCount = await GetShardCount();
+	if (shardCount <= 0) {
+		console.warn('[~] Shard count is 0, nothing to do!');
+		process.exit(0);
+	}
+	console.warn(`[~] Spawning ${shardCount} shards...`);
+	for (let i = 0; i < shardCount * SHARDS_PER_CLUSTER; i += SHARDS_PER_CLUSTER) {
+		CreateShard(i, shardCount);
+	}
+})();
+
+function ClearLine() {
+	process.stdout.write('\x1b[2K'); // clear current line
+	process.stdout.write('\x1b[0G'); // move cursor back to beginning
+}
+
+function BindListeners(child, shardID) {
+	child.stdout.on('data', message => {
+		message = message.toString().trim();
+		console.log(`[ Shard ${shardID} ] ${message}`);
+	});
+	child.on('exit', code => {
+		console.warn(`[~] Shard ${shardID} exited with code ${code}`);
+		shards.delete(shardID);
+		if (code !== 0) {
+			console.error(`[~] Restarting shard ${shardID}...`);
+			const newShard = CreateShard(shardID);
+			shards.set(shardID, newShard);
+		}
+	});
+}
+
+async function Shutdown() {
+	ClearLine();
+	console.warn('[~] Shutting down...');
+	for (const shard of shards.values()) {
+		shard.shutdown();
+	}
+
+	let shutdownAttempts = 0;
+	const MAX_SHUTDOWN_ATTEMPTS = 20;
+
+	while (shards.size > 0 && shutdownAttempts < MAX_SHUTDOWN_ATTEMPTS) {
+		// something is still ticking, wait a bit and try again
+		await new Promise(resolve => setTimeout(resolve, 1_000));
+		shutdownAttempts++;
+	}
+
+
+	// Something didn't close fully so we need to force it
+	if (shards.size > 0) {
+		for (const shard of shards.values()) {
+			shard.kill();
+		}
+		console.warn('[~] Forced shutdown of all shards');
+	}
+
+	process.exit(0);
+}
+
+// Crtl+Z handler
+process.on('SIGTSTP', Shutdown);
+
+// Crtl+C handler
+process.on('SIGINT', Shutdown);
+
+process.on('SIGTERM', Shutdown);
+process.on('uncaughtException', console.error);
+process.on('unhandledRejection', console.error);
+process.on('warning', console.warn);
+
+// Process exit handler
+process.on('exit', Shutdown);
+
+// IPC relays
+function ResetTimeout(requestID) {
+	const oldTimeout = requestTimeouts.get(requestID);
+	if (oldTimeout) {
+		clearTimeout(oldTimeout);
+	}
+
+	const newTimeout = setTimeout(() => {
+		activeRequests.delete(requestID);
+	}, 10_000); // 10 seconds
+
+	requestTimeouts.set(requestID, newTimeout);
+}
+
+const activeRequests = new Map(); // <requestID, results[]>
+const requestTimeouts = new Map(); // <requestID, timeout>
+process.on('message', message => {
+	const { type, shardID, requestID, data } = message;
+	/*
+	module.exports = {
+		BROADCAST_EVAL: 0,
+		BROADCAST_EVAL_RESULT: 1,
+		BROADCAST_EVENT: 2,
+		FETCH_CLIENT_VALUE: 3,
+		SHARD_READY: 4,
+		PERFORMANCE_METRICS: 5,
+		LOG: 6,
+		
+		SHUTDOWN: 99,
+
+		// IPC error codes
+		IPC_UNKNOWN_TYPE: 100,
+		IPC_INVALID_PAYLOAD: 101,
+		IPC_UNKNOWN_REQUEST_ID: 102,
+		IPC_UNKNOWN_ERROR: 199
+	}
+	*/
+	switch (type) {
+		case MessageTypes.BROADCAST_EVAL_RESULT:
+			// eval expired
+			if (!activeRequests.has(requestID)) return;
+
+			ResetTimeout(requestID);
+			const results = activeRequests.get(requestID);
+			results.push(data);
+			if (results.length === shards.size * SHARDS_PER_CLUSTER) {
+				// every cluster has responded, no more waiting
+				for (const shard of shards.values()) {
+					shard.send({ type: MessageTypes.BROADCAST_EVAL_RESULT, requestID, result: results });
+				}
+				activeRequests.delete(requestID);
+			}
+			activeRequests.set(requestID, results);
+			break;
+		case MessageTypes.BROADCAST_EVAL:
+			// send everywhere else
+			activeRequests.set(requestID, []);
+			ResetTimeout(requestID);
+			for (const shard of shards.values()) {
+				shard.send(message);
+			}
+			break;
+		case MessageTypes.FETCH_CLIENT_VALUE:
+			// bounce back to all shards
+			activeRequests.set(requestID, []);
+			for (const shard of shards.values()) {
+				shard.send(message);
+			}
+			break;
+		case MessageTypes.SHARD_READY:
+			console.log(`[~] Shard ${shardID} is ready`);
+			break;
+		case MessageTypes.LOG:
+			console.log(data);
+			break;
+		case MessageTypes.SHUTDOWN:
+			// no lol
+			break;
+		case MessageTypes.IPC_UNKNOWN_TYPE:
+		case MessageTypes.IPC_INVALID_PAYLOAD:
+		case MessageTypes.IPC_UNKNOWN_REQUEST_ID:
+		case MessageTypes.IPC_UNKNOWN_ERROR:
+			// TODO: error handling
+			break;
+		default:
+			console.warn(`[~] Unknown message type: ${type}`);
+	}
+});
