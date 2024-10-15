@@ -5,9 +5,11 @@ if (!process.send) {
 }
 
 // node app.js 0
-const shardID = parseInt(process.argv[2]); // possibly NaN if not specified
-if (isNaN(shardID)) {
-	console.error(`Invalid shard ID provided : ${process.argv[2]}`);
+const clusters = parseInt(process.argv[2]);
+const shardID = parseInt(process.argv[3]);
+const shardCount = parseInt(process.argv[4]);
+if (isNaN(shardCount)) { // only have to check the last one, if the others are NaN this will be too
+	console.error(`Invalid shard info provided : ${process.argv[2]} / ${process.argv[3]}`);
 	process.exit(1);
 }
 
@@ -15,8 +17,14 @@ require('./utils/Overrides/Interactions.js')();
 require('./utils/Overrides/InteractionEvent.js')();
 require('./utils/ProcessHandlers.js')();
 
+const ComponentLoader = require('./utils/ComponentLoader.js');
+const EventLoader = require('./utils/EventLoader.js');
+const ShardManager = require('./utils/Sharding/ShardManager.js');
+
 const { Client } = require('discord.js');
 const client = new Client({
+	shardCount: shardCount,
+	shards: Array.from({ length: clusters }, (_, i) => i + shardID),
 	intents: [
 		'MessageContent',
 		'GuildMessages',
@@ -30,9 +38,8 @@ client.logs = require('./utils/Logs.js');
 client.cooldowns = new Map();
 client.activeCollectors = new Map(); // <messageID, collector>
 client.responseCache = new Map(); // <commandName, response>
+client.shards = new ShardManager(client, clusters, shardID, shardCount);
 
-const ComponentLoader = require('./utils/ComponentLoader.js');
-const EventLoader = require('./utils/EventLoader.js');
 
 const modules = [
 	'commands',
