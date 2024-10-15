@@ -85,57 +85,58 @@ function SimplifyCommand(command) {
 }
 
 function TokenizeCommand(command) {
+	return CRC32(JSON.stringify(command, StringifyFunction));
+}
 
-	/*
-	API
-	{
-		id: '1294870059520491532',
-		application_id: '1100580118579122258',
-		version: '1294870059520491538',
-		default_member_permissions: null,
-		type: 1,
-		name: 'say',
-		description: 'Say something!',
-		dm_permission: false,
-		contexts: null,
-		integration_types: [ 0 ],
-		nsfw: false
+function CheckCommandEquality(oldCommand, newCommand) {
+	const oldToken = TokenizeCommand(oldCommand);
+	const newToken = TokenizeCommand(newCommand);
+	return oldToken === newToken;
+}
+
+function NeedsRegister(oldCommands, newCommands) {
+	if (Object.keys(oldCommands).length !== Object.keys(newCommands).length) {
+		console.log('Length mismatch');
+		console.log(Object.keys(oldCommands).length, Object.keys(newCommands).length);
+		return true;
 	}
-	*/
-	/*
-	DJS
-	{
-		"options": [],
-		"name": "say",
-		"description": "Say something!",
-		"type": 1
+	for (const [name, command] of Object.entries(oldCommands)) {
+		if (!newCommands[name]) {
+			return true;
+		}
+		if (!CheckCommandEquality(command, newCommands[name])) {
+			return true;
+		}
 	}
-	*/
-
-	return CRC32(JSON.stringify(command, null, 4));
+	return false;
 }
 
-let oldCommands = {};
-let newCommands = {};
+DynamicRegister();
+async function DynamicRegister() {
+	console.log('Checking commands, this may take a second...');
+	const oldCommands = {};
+	const newCommands = {};
 
-const components = {
-	commands: new Map(),
-	buttons: new Map(),
-	menus: new Map(),
-	modals: new Map(),
-	messages: new Map()
-}
-ComponentLoader(components, 'commands');
-for (const [name, command] of components.commands.entries()) {
-	if (command.dev) continue; // handled separately
-	newCommands[name] = SimplifyCommand(command.data);
-}
+	const oldDevCommands = {};
+	const newDevCommands = {};
 
-(async () => {
+	const components = {
+		commands: new Map()
+	}
+	ComponentLoader(components, 'commands');
+
+	for (const [name, command] of components.commands.entries()) {
+		if (command.dev) {
+			newDevCommands[name] = SimplifyCommand(command.data);
+		} else {
+			newCommands[name] = SimplifyCommand(command.data);
+		}
+	}
+
 	const registeredCommands = await MakeRequest('GET', `https://discord.com/api/v10/applications/${config.APP_ID}/commands`, null, config.TOKEN); // Array
 
 	if (registeredCommands.length === 0) {
-		RegisterCommands(components);
+		await RegisterCommands(components);
 		return;
 	}
 	// oldCommands = Object.fromEntries(registeredCommands.map(command => [command.name, command]));
@@ -143,30 +144,29 @@ for (const [name, command] of components.commands.entries()) {
 		oldCommands[command.name] = SimplifyCommand(command);
 	}
 
-	let needsRegister = false;
-	if (Object.keys(oldCommands).length !== Object.keys(newCommands).length) {
-		console.log('Command count mismatch');
-		console.log('Old Commands:', oldCommands);
-		console.log('New Commands:', newCommands);
-		needsRegister = true;
-	} else {
-		console.log('Old Commands:', oldCommands);
-		console.log('New Commands:', newCommands);
-		for (const [name, command] of Object.entries(oldCommands)) {
-			if (!newCommands[name]) {
-				needsRegister = true;
-				break;
-			}
-			const oldToken = TokenizeCommand(command);
-			const newToken = TokenizeCommand(newCommands[name]);
-			if (oldToken !== newToken) {
-				needsRegister = true;
-				break;
-			}
+	let needsRegister = NeedsRegister(oldCommands, newCommands);
+	// Only check dev commands if no change is needed, this prevents unnecessary API calls
+	// Won't matter if dev commands are different if the public commands are also different, still need to register
+	if (!needsRegister && config.DEV_GUILD_ID.length > 0) {
+		const registeredDevCommands = await MakeRequest('GET', `https://discord.com/api/v10/applications/${config.APP_ID}/guilds/${config.DEV_GUILD_ID}/commands`, null, config.TOKEN); // Array
+
+		if (registeredDevCommands.length === 0) {
+			RegisterCommands(components);
+			return;
 		}
+		// oldDevCommands = Object.fromEntries(registeredDevCommands.map(command => [command.name, command]));
+		for (const command of registeredDevCommands) {
+			oldDevCommands[command.name] = SimplifyCommand(command);
+		}
+
+		needsRegister = NeedsRegister(oldDevCommands, newDevCommands);
 	}
 
 	if (needsRegister) {
+		console.log('Started refreshing application (/) commands');
 		await RegisterCommands(components);
+		console.log('Successfully reloaded application (/) commands.');
+	} else {
+		console.log('No changes detected, skipping registration');
 	}
-})();
+}
