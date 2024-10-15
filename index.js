@@ -246,8 +246,8 @@ async function GetShardCount() {
 	return shardCount;
 }
 
+let shuttingDown = false;
 const shards = new Map(); // <shardID, process> - shards are spawned as child processes
-
 function CreateShard(shardID, shardCount = shards.size) {
 	const shard = ChildProcess.fork('./app.js', [SHARDS_PER_CLUSTER, shardID, shardCount], {
 		// JSON serialization allows for transmission of primitive types but not much else
@@ -278,7 +278,7 @@ function BindListeners(child, shardID) {
 	child.on('exit', code => {
 		console.warn(`[~] Shard ${shardID} exited with code ${code}`);
 		shards.delete(shardID);
-		if (code !== 0) {
+		if (code !== 0 && !shuttingDown) {
 			console.error(`[~] Restarting shard ${shardID}...`);
 			const newShard = CreateShard(shardID, shards.size + 1);
 			shards.set(shardID, newShard);
@@ -287,6 +287,10 @@ function BindListeners(child, shardID) {
 }
 
 async function Shutdown() {
+
+	if (shuttingDown) return;
+	shuttingDown = true; // prevent spawning more instances + double shutdown
+
 	ClearLine();
 	console.warn('[~] Shutting down...');
 	for (const shard of shards.values()) {
