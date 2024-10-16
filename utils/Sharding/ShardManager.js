@@ -30,9 +30,8 @@ module.exports = class ShardManager {
 	broadcast (type, data) {
 		const requestID = this.generateRequestID();
 		process.send({
-			type: MessageTypes.BROADCAST,
-			requestID: requestID,
 			type: type,
+			requestID: requestID,
 			data: data
 		});
 		return requestID;
