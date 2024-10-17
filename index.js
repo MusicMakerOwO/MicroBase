@@ -3,9 +3,7 @@ const ChildProcess = require('node:child_process'); // shards are spawned as chi
 
 const MIN_SHARDS = 1;
 const MAX_SHARDS = 16;
-const SHARDS_PER_CLUSTER = 4;
-const GUILDS_PER_SHARD = 1000;
-const GUILDS_PER_CLUSTER = SHARDS_PER_CLUSTER * GUILDS_PER_SHARD;
+const GUILDS_PER_SHARD = 2000;
 
 // Won't catch any missing packages in this file since it is pre-compiled
 // It will work on the second run, so either run this twice or install manually
@@ -20,7 +18,8 @@ module.exports = {
 	SHARD_READY: 3,
 	PERFORMANCE_METRICS: 4,
 	LOG: 5,
-	SHUTDOWN: 6,
+
+	SHUTDOWN: 99,
 
 	// IPC error codes
 	IPC_UNKNOWN_TYPE: 100,
@@ -205,15 +204,14 @@ async function GetGuildCount() {
 
 async function GetShardCount() {
 	const guildCount = await GetGuildCount();
-	let custerCount = Math.ceil(guildCount / GUILDS_PER_SHARD);
-	let shardCount = Math.ceil(custerCount / SHARDS_PER_CLUSTER);
+	let shardCount = Math.ceil(guildCount / GUILDS_PER_SHARD);
 
 	if (shardCount < MIN_SHARDS) {
 		shardCount = MIN_SHARDS;
 	}
 
 	if (shardCount > MAX_SHARDS) {
-		const recommendedShards = Math.ceil(guildCount / GUILDS_PER_CLUSTER);
+		const recommendedShards = Math.ceil(guildCount / GUILDS_PER_SHARD);
 
 		console.error(`You have exceeded the maximum shard count of ${MAX_SHARDS}, you should consider increasing the limit.`);
 		console.error(`This will cause issues with your bot if you do not resolve this!`);
@@ -222,13 +220,11 @@ async function GetShardCount() {
 		console.warn(`Max shard count: ${MAX_SHARDS}`);
 		console.error('-'.repeat(10), 'Recommendations', '-'.repeat(10));
 		console.warn(`Shard count: ${recommendedShards}`);
-		console.warn(`Clusters per shard: ${SHARDS_PER_CLUSTER}`);
-		console.warn(`Guilds per cluster: ${GUILDS_PER_SHARD}`);
-		console.warn(`Guilds per shard: ${GUILDS_PER_CLUSTER}`);
+		console.warn(`Guilds per shard: ${GUILDS_PER_SHARD}`);
 		console.error('-'.repeat(13), 'Settings', '-'.repeat(13));
-		console.error(`SHARDS_PER_CLUSTER: ${SHARDS_PER_CLUSTER}`);
+		console.error(`MIN_SHARDS: ${MIN_SHARDS}`);
+		console.error(`MAX_SHARDS: ${MAX_SHARDS}`);
 		console.error(`GUILDS_PER_SHARD: ${GUILDS_PER_SHARD}`);
-		console.error(`GUILDS_PER_CLUSTER: ${GUILDS_PER_CLUSTER}`);
 		console.error('--'.repeat(18));
 		const response = await Prompt(`\x1b[34mWould you like to use the recommended \x1b[0mshard count of ${recommendedShards}\x1b[34m? (Y/n/c)\x1b[0m `);
 		
@@ -249,7 +245,7 @@ async function GetShardCount() {
 let shuttingDown = false;
 const shards = new Map(); // <shardID, process> - shards are spawned as child processes
 function CreateShard(shardID, shardCount = shards.size) {
-	const shard = ChildProcess.fork('./app.js', [SHARDS_PER_CLUSTER, shardID, shardCount], {
+	const shard = ChildProcess.fork('./app.js', [shardID, shardCount], {
 		// JSON serialization allows for transmission of primitive types but not much else
 		// Things like numbers, strings, booleans, arrays, and objects are fine
 		// But if you need more complex data, like functions, you will need to convert it to a primitive
@@ -294,6 +290,7 @@ async function Shutdown() {
 	ClearLine();
 	console.warn('[~] Shutting down...');
 	for (const shard of shards.values()) {
+		if (!shard?.connected) continue;
 		shard.shutdown();
 	}
 
@@ -377,8 +374,8 @@ process.on('message', message => {
 			ResetTimeout(requestID);
 			const results = activeRequests.get(requestID);
 			results.push(data);
-			if (results.length === shards.size * SHARDS_PER_CLUSTER) {
-				// every cluster has responded, no more waiting
+			if (results.length === shards.size) {
+				// every shard has responded, no more waiting
 				for (const shard of shards.values()) {
 					shard.send({ type: MessageTypes.BROADCAST_EVAL_RESULT, requestID, result: results });
 				}
@@ -432,7 +429,7 @@ process.on('message', message => {
 	}
 
 	console.warn(`[~] Spawning ${shardCount} shards...`);
-	for (let i = 0; i < shardCount * SHARDS_PER_CLUSTER; i += SHARDS_PER_CLUSTER) {
+	for (let i = 0; i < shardCount; i++) {
 		CreateShard(i, shardCount);
 	}
 })();
