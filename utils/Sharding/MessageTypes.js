@@ -6,6 +6,7 @@ module.exports = {
 	SHARD_READY: 4,
 	PERFORMANCE_METRICS: 5,
 	LOG: 6,
+	HEARTBEAT: 7,
 	
 	SHUTDOWN: 99,
 
