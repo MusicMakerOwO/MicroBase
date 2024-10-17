@@ -4,7 +4,8 @@ const ReadFolder = require('./ReadFolder.js');
 const Logs = require('./Logs.js');
 
 const IGNORED_EVENTS = [
-	'hotReload'
+	'hotReload',
+	'shutdown'
 ]
 
 module.exports = function (client) {
