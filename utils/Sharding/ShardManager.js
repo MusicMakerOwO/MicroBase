@@ -2,18 +2,36 @@
 
 const MessageTypes = require('./MessageTypes.js');
 
+const GuildCache = new Map();
+
 module.exports = class ShardManager {
 	#client = null;
-	contructor (client, clusters, shardID, shardCount) {
+	contructor (client, shardID, shardCount) {
 		this.#client = client;
 
-		this.clusters = clusters;
 		this.shardID = shardID;
 		this.shardCount = shardCount;
 
 		this.activeRequests = new Map(); // <requestID, Promise>
 
 		process.on('message', this.handleIncomingMessage.bind(this));
+	}
+
+	async lookupGuild (guildID) {
+		const shardID = (guildID >> 22) % this.shardCount;
+		if (shardID === this.shardID) return this.#client.guilds.cache.get(guildID);
+		if (GuildCache.has(guildID)) return GuildCache.get(guildID);
+
+		// It's not worth the time and effort to destructure and reconstruct and entire guild object
+		// IPC would suffer greatly from the shear amount of data transfered
+		const guild = await this.#client.guilds.fetch(guildID).catch(() => null);
+		if (guild) GuildCache.set(guildID, guild);
+
+		return guild;
+	}
+
+	SendHeartbeat () {
+		this.broadcast(MessageTypes.HEARTBEAT);
 	}
 
 	generateRequestID () {
@@ -23,7 +41,16 @@ module.exports = class ShardManager {
 
 	waitForRequest (requestID) {
 		return new Promise((resolve, reject) => {
-			this.activeRequests.set(requestID, { resolve, reject });
+			const timeout = setTimeout(() => {
+				this.activeRequests.delete(requestID);
+				reject('Request timed out');
+			}, 10_000);
+			const finish = (...args) => {
+				clearTimeout(timeout);
+				this.activeRequests.delete(requestID);
+				resolve(...args);
+			};
+			this.activeRequests.set(requestID, { resolve: finish, reject });
 		});
 	}
 
@@ -32,9 +59,14 @@ module.exports = class ShardManager {
 		process.send({
 			type: type,
 			requestID: requestID,
+			shardID: this.shardID,
 			data: data
 		});
 		return requestID;
+	}
+
+	broadcastReady () {
+		this.broadcast(MessageTypes.SHARD_READY);
 	}
 
 	async broadcastEval (script) {
