@@ -4,10 +4,11 @@ if (!process.send) {
 	process.exit(1);
 }
 
+
+// How can I be gay? My bitch is homophobic
 // node app.js 0
-const clusters = parseInt(process.argv[2]);
-const shardID = parseInt(process.argv[3]);
-const shardCount = parseInt(process.argv[4]);
+const shardID = parseInt(process.argv[2]);
+const shardCount = parseInt(process.argv[3]);
 if (isNaN(shardCount)) { // only have to check the last one, if the others are NaN this will be too
 	console.error(`Invalid shard info provided : ${process.argv[2]} / ${process.argv[3]}`);
 	process.exit(1);
@@ -24,7 +25,7 @@ const ShardManager = require('./utils/Sharding/ShardManager.js');
 const { Client } = require('discord.js');
 const client = new Client({
 	shardCount: shardCount,
-	shards: Array.from({ length: clusters }, (_, i) => i + shardID),
+	shards: shardID,
 	intents: [
 		'MessageContent',
 		'GuildMessages',
@@ -38,7 +39,7 @@ client.logs = require('./utils/Logs.js');
 client.cooldowns = new Map();
 client.activeCollectors = new Map(); // <messageID, collector>
 client.responseCache = new Map(); // <commandName, response>
-client.shards = new ShardManager(client, clusters, shardID, shardCount);
+client.shards = new ShardManager(client, shardID, shardCount);
 
 
 const modules = [
