@@ -85,8 +85,8 @@ async function InteractionHandler(client, interaction, type) {
 			// 2) Command not being run in DMs
 			// 3) Client has GuildMembers intent
 			// 4) Not actively rate limited
-			CheckPermissions(component.clientPerms, botMember); // bot
-			CheckPermissions(component.userPerms, interaction.member); // user
+			CheckPermissions(client, component.clientPerms, botMember); // bot
+			CheckPermissions(client, component.userPerms, interaction.member); // user
 		}
 	} catch ([response, reason]) {
 		await interaction.reply({

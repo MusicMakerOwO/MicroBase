@@ -1,6 +1,6 @@
 const Permissions = require('../Permissions.js');
 
-module.exports = function CheckPermissions(permissionsArray, member) {
+module.exports = function CheckPermissions(client, permissionsArray, member) {
 	if (!Array.isArray(permissionsArray) || !member) return;
 
 	const prefix = member.user.id === client.user.id ? 'I am' : 'You are';
