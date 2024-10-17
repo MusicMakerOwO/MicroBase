@@ -3,7 +3,7 @@ module.exports = {
 	// You have 10 seconds to finish whatever you're doing before the shard is forcefully killed
 	name: 'shutdown',
 	execute: async function (client) {
-		console.log(`Shard ${client.shard.ids[0]} is shutting down...`);
+		console.log(`Shard ${client.shards.shardID} is shutting down...`);
 		client.destroy();
 		process.exit(0);
 	}
