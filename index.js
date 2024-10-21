@@ -433,3 +433,11 @@ process.on('message', message => {
 		CreateShard(i, shardCount);
 	}
 })();
+
+function ConvertMapToObject(map) {
+	const obj = {};
+	for (const [key, value] of map.entries()) {
+		obj[key] = value;
+	}
+	return obj;
+}
