@@ -7,6 +7,7 @@ module.exports = {
 	PERFORMANCE_METRICS: 5,
 	LOG: 6,
 	HEARTBEAT: 7,
+	HEARTBEAT_ACK: 8,
 	
 	SHUTDOWN: 99,
 

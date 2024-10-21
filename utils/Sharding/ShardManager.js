@@ -30,10 +30,6 @@ module.exports = class ShardManager {
 		return guild;
 	}
 
-	SendHeartbeat () {
-		this.broadcast(MessageTypes.HEARTBEAT);
-	}
-
 	generateRequestID () {
 		// 1-XXXXXX
 		return `${this.shardID}-${Math.floor(Math.random() * 1_000_000)}`;
@@ -97,6 +93,12 @@ module.exports = class ShardManager {
 		if (!request) return;
 
 		switch (type) {
+			case MessageTypes.HEARTBEAT:
+				this.broadcast(MessageTypes.HEARTBEAT_ACK);
+				// If no response is received within 30 seconds, the manager will assume the shard is dead
+				// This could be either due to lag, stuck in a loop, or the shard being fully dead somehow
+				// In this case it won't get a graceful shutdown and will be forcefully killed
+				break;
 			case MessageTypes.BROADCAST_EVAL_RESULT:
 				request.resolve(data);
 				break;
