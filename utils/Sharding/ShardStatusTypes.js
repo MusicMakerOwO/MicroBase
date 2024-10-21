@@ -1,0 +1,9 @@
+module.exports = {
+	ONLINE: 1,
+	OFFLINE: 2,
+	DEAD: 3,
+	STARTING: 4,
+	STOPPING: 5,
+	UNRESPONSIVE: 6,
+	UNKNOWN: 99
+}
