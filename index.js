@@ -288,7 +288,7 @@ function GetLatestLogFile() {
 	return NEWEST_LOG;
 }
 
-let StoreLogCooldown = setTimeout(StoreLogs, 1000 * 10); // 5 minutes
+let StoreLogCooldown = setInterval(StoreLogs, 1000 * 10); // 5 minutes
 const LOG_QUEUE = [];
 
 function StoreLogs () {
@@ -306,14 +306,14 @@ const LOG_TYPES = {
 }
 
 let LONGEST_TYPE = Math.max(...Object.keys(LOG_TYPES).map(type => type.length));
-function AppendLogs(type, shardID, message) {
+function AppendLogs(type, shardID, message, silent = false) {
 	if (Buffer.isBuffer(message)) message = message.toString().trim();
 
 	type = String(type).toUpperCase();
 	if (type.length > LONGEST_TYPE) LONGEST_TYPE = type.length;
 
 	const formattedMessage = `[ Shard ${shardID} - ${String(type).padEnd(LONGEST_TYPE)} ] ${message}`;
-	console.log(formattedMessage);
+	if (!silent) console.log(formattedMessage);
 	
 	const cleanMessage = formattedMessage.replace(/\x1b\[[0-9;]*m/g, '');
 	LOG_QUEUE.push(cleanMessage);
@@ -325,15 +325,21 @@ function BindListeners(child, shardID) {
 	child.stderr.on('data', AppendLogs.bind(null, LOG_TYPES.ERROR, shardID));
 	child.on('exit', code => {
 		console.warn(`[~] Shard ${shardID} exited with code ${code}`);
+		AppendLogs(LOG_TYPES.ERROR, shardID, `Shard ${shardID} exited with code ${code}`, true);
+
 		shards.delete(shardID);
 		if (code !== 0 && !shuttingDown) {
 			const lastCrash = shardCrashes.get(shardID);
 			const timeSinceCrash = Date.now() - lastCrash;
 			if (timeSinceCrash < 10_000) {
 				console.error(`[~] Shard ${shardID} crashed too quickly [${timeSinceCrash}ms], not respawning`);
+				AppendLogs(LOG_TYPES.ERROR, shardID, `Shard ${shardID} crashed too quickly [${timeSinceCrash}ms], not respawning`, true);
 				return;
 			}
+			
 			console.error(`[~] Restarting shard ${shardID}...`);
+			AppendLogs(LOG_TYPES.ERROR, shardID, `Restarting shard ${shardID}...`, true);
+
 			const newShard = CreateShard(shardID, shards.size + 1);
 			shards.set(shardID, newShard);
 		}
