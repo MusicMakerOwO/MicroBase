@@ -15,8 +15,6 @@ module.exports = {
 	name: 'hotReload',
 	execute: async function (client, file = FILE_TEMPLATE) {
 
-		console.log(file);
-
 		if (!file.folder || !file.eventType || !file.filename) {
 			client.logs.warn(`[RELOAD] Invalid file event detected - Ignoring...`);
 			client.logs.warn(file);
@@ -82,7 +80,6 @@ module.exports = {
 				// only register commands if fileData.data has changed in any way
 				const oldDataJSON = JSON.stringify( typeof oldData?.data?.toJSON === 'function' ? oldData?.data?.toJSON() : oldData?.data);
 				const newFileJSON = JSON.stringify( typeof newFile.data?.toJSON === 'function' ? newFile.data?.toJSON() : newFile.data);
-				console.log(oldDataJSON, newFileJSON);
 				if (!oldData || oldDataJSON !== newFileJSON) needsRegister = true;
 				cache.set(newFile.data.name, newFile);
 				break;
