@@ -244,6 +244,7 @@ async function GetShardCount() {
 
 let shuttingDown = false;
 const shards = new Map(); // <shardID, process> - shards are spawned as child processes
+const shardCrashes = new Map(); // <shardID, last timestamp>
 function CreateShard(shardID, shardCount = shards.size) {
 	const shard = ChildProcess.fork('./app.js', [shardID, shardCount], {
 		// JSON serialization allows for transmission of primitive types but not much else
@@ -259,6 +260,7 @@ function CreateShard(shardID, shardCount = shards.size) {
 	}
 	BindListeners(shard, shardID);
 	shards.set(shardID, shard);
+	shardCrashes.set(shardID, Date.now());
 }
 
 function ClearLine() {
@@ -271,10 +273,20 @@ function BindListeners(child, shardID) {
 		message = message.toString().trim();
 		console.log(`[ Shard ${shardID} ] ${message}`);
 	});
+	child.stderr.on('data', message => {
+		message = message.toString().trim();
+		console.error(`[ Shard ${shardID} ] ${message}`);
+	});
 	child.on('exit', code => {
 		console.warn(`[~] Shard ${shardID} exited with code ${code}`);
 		shards.delete(shardID);
 		if (code !== 0 && !shuttingDown) {
+			const lastCrash = shardCrashes.get(shardID);
+			const timeSinceCrash = Date.now() - lastCrash;
+			if (timeSinceCrash < 10_000) {
+				console.error(`[~] Shard ${shardID} crashed too quickly [${timeSinceCrash}ms], not respawning`);
+				return;
+			}
 			console.error(`[~] Restarting shard ${shardID}...`);
 			const newShard = CreateShard(shardID, shards.size + 1);
 			shards.set(shardID, newShard);
@@ -286,6 +298,12 @@ async function Shutdown() {
 
 	if (shuttingDown) return;
 	shuttingDown = true; // prevent spawning more instances + double shutdown
+
+	if (shards.size === 0) {
+		// all shards either crashed or were shutdown
+		console.log('\x1b[34m[~] No shards to shutdown, natural exit');
+		process.exit(0);
+	}
 
 	ClearLine();
 	console.warn('[~] Shutting down...');
