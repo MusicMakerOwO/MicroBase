@@ -1,16 +1,11 @@
-// if this isn't a child process, exit
-if (!process.send) {
-	console.error('This bot cannot be run without a shard manager, run index.js instead');
-	process.exit(1);
-}
-
+const shardingOptions = {}
 
 // How can I be gay? My bitch is homophobic
 // node app.js 0
 const shardID = parseInt(process.argv[2]);
 const shardCount = parseInt(process.argv[3]);
-if (isNaN(shardCount)) { // only have to check the last one, if the others are NaN this will be too
-	console.error(`Invalid shard info provided : ${process.argv[2]} / ${process.argv[3]}`);
+if (shardID && isNaN(shardCount)) {
+	console.error('Shard ID was set but no shard count was defined');
 	process.exit(1);
 }
 
@@ -24,8 +19,10 @@ const ShardManager = require('./utils/Sharding/ShardManager.js');
 
 const { Client } = require('discord.js');
 const client = new Client({
-	shardCount: shardCount,
-	shards: shardID,
+	... shardID ? {
+		shardCount: shardCount,
+		shards: shardID,
+	} : {},
 	intents: [
 		'MessageContent',
 		'GuildMessages',
@@ -67,6 +64,14 @@ client.logs.debug(`Loaded ${ListenerCount - 1} events`);
 // This will only check intents loaded by the event loader
 // If they are defined below this point they will not be checked
 require('./utils/CheckIntents.js')(client);
+
+if (!shardID) {
+	// We only register if the bot isn't started by the shard manager
+	// The manger does a dynamic register but we don't have that luxury here
+	client.logs.info(`Started refreshing application (/) commands`);
+	require('./utils/RegisterCommands.js')(client);
+	client.logs.info(`Successfully reloaded application (/) commands`);
+}
 
 client.logs.info(`Logging in...`);
 client.login(client.config.TOKEN);
