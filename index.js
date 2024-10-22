@@ -288,6 +288,16 @@ function GetLatestLogFile() {
 	return NEWEST_LOG;
 }
 
+let StoreLogCooldown = setTimeout(StoreLogs, 1000 * 10); // 5 minutes
+const LOG_QUEUE = [];
+
+function StoreLogs () {
+	if (LOG_QUEUE.length === 0) return;
+	const logs = LOG_QUEUE.map(log => log.endsWith('\n') ? log : log + '\n').join('');
+	fs.appendFileSync(GetLatestLogFile(), logs);
+	LOG_QUEUE.length = 0;
+}
+
 const LOG_TYPES = {
 	INFO: 'INFO',
 	ERROR: 'ERROR',
@@ -304,9 +314,9 @@ function AppendLogs(type, shardID, message) {
 
 	const formattedMessage = `[ Shard ${shardID} - ${String(type).padEnd(LONGEST_TYPE)} ] ${message}`;
 	console.log(formattedMessage);
-
+	
 	const cleanMessage = formattedMessage.replace(/\x1b\[[0-9;]*m/g, '');
-	fs.appendFileSync(GetLatestLogFile(), cleanMessage.endsWith('\n') ? cleanMessage : cleanMessage + '\n');
+	LOG_QUEUE.push(cleanMessage);
 }
 
 function BindListeners(child, shardID) {
@@ -365,6 +375,9 @@ async function Shutdown() {
 		}
 		console.warn('[~] Forced shutdown of all shards');
 	}
+	
+	clearTimeout(StoreLogCooldown);
+	StoreLogs();
 
 	process.exit(0);
 }
