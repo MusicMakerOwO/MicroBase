@@ -364,6 +364,12 @@ function ResetTimeout(requestID) {
 const activeRequests = new Map(); // <requestID, results[]>
 const requestTimeouts = new Map(); // <requestID, timeout>
 process.on('message', message => {
+	if (typeof message !== 'object' || message === null) {
+		console.warn('[~] Invalid message received');
+		console.warn(message);
+		return;
+	}
+
 	const { type, shardID, requestID, data } = message;
 	/*
 	module.exports = {
@@ -384,6 +390,23 @@ process.on('message', message => {
 		IPC_UNKNOWN_ERROR: 199
 	}
 	*/
+
+	const shard = shards.get(shardID);
+	if (!shards.has(shardID)) {
+		console.warn(`[~] Unknown shard ID: ${shardID}`);
+		return;
+	}
+
+	if (!Object.keys(MessageTypes).includes(type)) {
+		shard.send({ type: MessageTypes.IPC_UNKNOWN_TYPE, requestID });
+		return;
+	}
+
+	if (typeof requestID !== 'string' || requestID.length === 0) {
+		shard.send({ type: MessageTypes.IPC_UNKNOWN_REQUEST_ID });
+		return;
+	}
+
 	switch (type) {
 		case MessageTypes.BROADCAST_EVAL_RESULT:
 			// eval expired
@@ -398,8 +421,9 @@ process.on('message', message => {
 					shard.send({ type: MessageTypes.BROADCAST_EVAL_RESULT, requestID, result: results });
 				}
 				activeRequests.delete(requestID);
+			} else {
+				activeRequests.set(requestID, results);
 			}
-			activeRequests.set(requestID, results);
 			break;
 		case MessageTypes.BROADCAST_EVAL:
 			// send everywhere else
