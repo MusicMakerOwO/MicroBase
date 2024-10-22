@@ -87,7 +87,25 @@ module.exports = class ShardManager {
 	}
 
 	async handleIncomingMessage (message) {
-		const { shardID, requestID, type, data } = message;
+
+		if (typeof message !== 'object' || message === null) {
+			console.warn('[~] Invalid message received');
+			console.warn(message);
+			return;
+		}
+	
+		const { type, shardID, requestID, data } = message;
+	
+		if (!Object.keys(MessageTypes).includes(type)) {
+			process.send({ type: MessageTypes.IPC_UNKNOWN_TYPE, requestID });
+			return;
+		}
+	
+		if (typeof requestID !== 'string' || requestID.length === 0) {
+			process.send({ type: MessageTypes.IPC_UNKNOWN_REQUEST_ID });
+			return;
+		}
+		
 		if (shardID && shardID !== this.shardID) return;
 
 		const request = this.activeRequests.get(requestID);
