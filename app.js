@@ -1,7 +1,4 @@
-const shardingOptions = {}
-
-// How can I be gay? My bitch is homophobic
-// node app.js 0
+// node app.js 0 1
 const shardID = parseInt(process.argv[2]);
 const shardCount = parseInt(process.argv[3]);
 if (shardID && isNaN(shardCount)) {
