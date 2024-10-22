@@ -106,8 +106,6 @@ function CheckCommandEquality(oldCommand, newCommand) {
 
 function NeedsRegister(oldCommands, newCommands) {
 	if (Object.keys(oldCommands).length !== Object.keys(newCommands).length) {
-		console.log('Length mismatch');
-		console.log(Object.keys(oldCommands).length, Object.keys(newCommands).length);
 		return true;
 	}
 	for (const [name, command] of Object.entries(oldCommands)) {
@@ -299,10 +297,17 @@ function StoreLogs () {
 }
 
 const LOG_TYPES = {
-	INFO: 'INFO',
-	ERROR: 'ERROR',
-	WARN: 'WARN',
-	DEBUG: 'DEBUG'
+	INFO  : 'INFO',
+	ERROR : 'ERROR',
+	WARN  : 'WARN',
+	DEBUG : 'DEBUG'
+}
+
+const LOG_COLORS = {
+	INFO  : '\x1b[32m',
+	ERROR : '\x1b[31m',
+	WARN  : '\x1b[33m',
+	DEBUG : '\x1b[36m'
 }
 
 let LONGEST_TYPE = Math.max(...Object.keys(LOG_TYPES).map(type => type.length));
@@ -312,7 +317,8 @@ function AppendLogs(type, shardID, message, silent = false) {
 	type = String(type).toUpperCase();
 	if (type.length > LONGEST_TYPE) LONGEST_TYPE = type.length;
 
-	const formattedMessage = `[ Shard ${shardID} - ${String(type).padEnd(LONGEST_TYPE)} ] ${message}`;
+	const color = LOG_COLORS[type] ?? '';
+	const formattedMessage = `[ Shard ${shardID} - ${color}${String(type).padEnd(LONGEST_TYPE)}\x1b[0m ] ${message}`;
 	if (!silent) console.log(formattedMessage);
 	
 	const cleanMessage = formattedMessage.replace(/\x1b\[[0-9;]*m/g, '');
@@ -324,6 +330,9 @@ function BindListeners(child, shardID) {
 	child.stdout.on('data', AppendLogs.bind(null, LOG_TYPES.INFO, shardID));
 	child.stderr.on('data', AppendLogs.bind(null, LOG_TYPES.ERROR, shardID));
 	child.on('exit', code => {
+		// Sometimes code is null so default to 1 meaning error
+		code ??= 1;
+
 		console.warn(`[~] Shard ${shardID} exited with code ${code}`);
 		AppendLogs(LOG_TYPES.ERROR, shardID, `Shard ${shardID} exited with code ${code}`, true);
 
