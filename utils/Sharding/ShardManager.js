@@ -51,6 +51,7 @@ module.exports = class ShardManager {
 	}
 
 	broadcast (type, data) {
+		if (isNaN(this.shardID) || !process.send) throw new Error('Sharding is not enabled, make sure you ran the manager in the index.js file');
 		const requestID = this.generateRequestID();
 		process.send({
 			type: type,
