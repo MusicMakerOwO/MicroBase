@@ -1,4 +1,5 @@
 const https = require('node:https');
+const fs = require('node:fs');
 const ChildProcess = require('node:child_process'); // shards are spawned as child processes
 
 const MIN_SHARDS = 1;
@@ -10,24 +11,6 @@ const GUILDS_PER_SHARD = 2000;
 require('./utils/CheckPackages.js')();
 
 const MessageTypes = require('./utils/Sharding/MessageTypes.js'); // enum for sharding communication
-/*
-module.exports = {
-	BROADCAST_EVAL: 0,
-	BROADCAST_EVAL_RESULT: 1,
-	FETCH_CLIENT_VALUE: 2,
-	SHARD_READY: 3,
-	PERFORMANCE_METRICS: 4,
-	LOG: 5,
-
-	SHUTDOWN: 99,
-
-	// IPC error codes
-	IPC_UNKNOWN_TYPE: 100,
-	IPC_INVALID_PAYLOAD: 101,
-	IPC_UNKNOWN_REQUEST_ID: 102,
-	IPC_UNKNOWN_ERROR: 199
-}
-*/
 
 const Prompt = require('./utils/Prompt.js');
 const CRC32 = require('./utils/crc32.js');
@@ -268,15 +251,68 @@ function ClearLine() {
 	process.stdout.write('\x1b[0G'); // move cursor back to beginning
 }
 
+// This only runs on startup so don't delete the folder lol
+if (!fs.existsSync(`${__dirname}/logs/`)) {
+	fs.mkdirSync(`${__dirname}/logs/`);
+}
+
+let LAST_CHECK = 0;
+let NEWEST_LOG = '';
+function GetLatestLogFile() {
+	if (Date.now() - LAST_CHECK < 1000 * 60 * 5) return NEWEST_LOG;
+
+	const files = fs.readdirSync(`${__dirname}/logs/`);
+	const logs = files.filter(file => file.endsWith('.log'));
+	const dates = logs.map(log => log.split('.').shift()).sort((a, b) => new Date(b) - new Date(a));
+
+	if (dates.length === 0) {
+		const today = new Date().toISOString().split('T').shift();
+		fs.writeFileSync(`${__dirname}/logs/${today}.log`, '');
+		NEWEST_LOG = `${__dirname}/logs/${today}.log`;
+		LAST_CHECK = Date.now();
+		return NEWEST_LOG;
+	}
+
+	let newest = dates.shift();
+	const today = new Date().toISOString().split('T').shift();
+	if (newest !== today) {
+		fs.writeFileSync(`${__dirname}/logs/${today}.log`, '');
+		if (files.length >= 7) {
+			fs.unlinkSync(`${__dirname}/logs/${dates.pop()}.log`);
+		}
+		newest = today;
+	}
+
+	NEWEST_LOG = `${__dirname}/logs/${newest}.log`;
+	LAST_CHECK = Date.now();
+	return NEWEST_LOG;
+}
+
+const LOG_TYPES = {
+	INFO: 'INFO',
+	ERROR: 'ERROR',
+	WARN: 'WARN',
+	DEBUG: 'DEBUG'
+}
+
+let LONGEST_TYPE = Math.max(...Object.keys(LOG_TYPES).map(type => type.length));
+function AppendLogs(type, shardID, message) {
+	if (Buffer.isBuffer(message)) message = message.toString().trim();
+
+	type = String(type).toUpperCase();
+	if (type.length > LONGEST_TYPE) LONGEST_TYPE = type.length;
+
+	const formattedMessage = `[ Shard ${shardID} - ${String(type).padEnd(LONGEST_TYPE)} ] ${message}`;
+	console.log(formattedMessage);
+
+	const cleanMessage = formattedMessage.replace(/\x1b\[[0-9;]*m/g, '');
+	fs.appendFileSync(GetLatestLogFile(), cleanMessage.endsWith('\n') ? cleanMessage : cleanMessage + '\n');
+}
+
 function BindListeners(child, shardID) {
-	child.stdout.on('data', message => {
-		message = message.toString().trim();
-		console.log(`[ Shard ${shardID} ] ${message}`);
-	});
-	child.stderr.on('data', message => {
-		message = message.toString().trim();
-		console.error(`[ Shard ${shardID} ] ${message}`);
-	});
+
+	child.stdout.on('data', AppendLogs.bind(null, LOG_TYPES.INFO, shardID));
+	child.stderr.on('data', AppendLogs.bind(null, LOG_TYPES.ERROR, shardID));
 	child.on('exit', code => {
 		console.warn(`[~] Shard ${shardID} exited with code ${code}`);
 		shards.delete(shardID);
