@@ -62,7 +62,7 @@ client.logs.debug(`Loaded ${ListenerCount - 1} events`);
 // If they are defined below this point they will not be checked
 require('./utils/CheckIntents.js')(client);
 
-if (!shardID) {
+if (isNaN(shardID)) {
 	// We only register if the bot isn't started by the shard manager
 	// The manger does a dynamic register but we don't have that luxury here
 	client.logs.info(`Started refreshing application (/) commands`);

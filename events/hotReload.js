@@ -1,6 +1,5 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const Module = require('node:module');
 
 const RegisterCommands = require('../utils/RegisterCommands.js');
 const ComponentLoader = require('../utils/ComponentLoader.js');
@@ -16,6 +15,8 @@ module.exports = {
 	name: 'hotReload',
 	execute: async function (client, file = FILE_TEMPLATE) {
 
+		console.log(file);
+
 		if (!file.folder || !file.eventType || !file.filename) {
 			client.logs.warn(`[RELOAD] Invalid file event detected - Ignoring...`);
 			client.logs.warn(file);
@@ -26,7 +27,6 @@ module.exports = {
 
 		const fullPath = path.resolve(`${__dirname}/../${file.folder}/${file.filename}`);
 		if (fullPath === __filename) return; // ignore this file
-
 		if (!fs.existsSync(fullPath)) {
 			client.logs.warn(`[RELOAD] File does not exist - Was it deleted or renamed?`);
 			return;
@@ -60,6 +60,11 @@ module.exports = {
 		if (!oldData && file.folder !== 'events') {
 			// changed the customID, need a full reload of that folder
 			ComponentLoader(client, file.folder);
+			if (file.folder === 'commands') {
+				client.logs.info('Started refreshing application (/) commands');
+				RegisterCommands(client);
+				client.logs.info('Successfully reloaded application (/) commands');
+			}
 			return;
 		}
 
@@ -77,6 +82,7 @@ module.exports = {
 				// only register commands if fileData.data has changed in any way
 				const oldDataJSON = JSON.stringify( typeof oldData?.data?.toJSON === 'function' ? oldData?.data?.toJSON() : oldData?.data);
 				const newFileJSON = JSON.stringify( typeof newFile.data?.toJSON === 'function' ? newFile.data?.toJSON() : newFile.data);
+				console.log(oldDataJSON, newFileJSON);
 				if (!oldData || oldDataJSON !== newFileJSON) needsRegister = true;
 				cache.set(newFile.data.name, newFile);
 				break;
@@ -91,7 +97,9 @@ module.exports = {
 
 		if (!needsRegister) return client.logs.debug(`[RELOAD] Successfully reloaded ${file.folder}/${file.filename}`);
 
+		client.logs.info('Started refreshing application (/) commands');
 		RegisterCommands(client);
+		client.logs.info('Successfully reloaded application (/) commands');
 
 		client.logs.debug(`[RELOAD] Successfully reloaded ${file.folder}/${file.filename}`);
 		client.logs.debug(`[RELOAD] If the new command is not showing up restart your discord client!`);
