@@ -54,7 +54,9 @@ module.exports = {
 			return;
 		}
 
+
 		const oldData = cache?.get(newFile.customID ?? newFile.name ?? newFile.data?.name);
+		client.responseCache.delete(oldData?.customID ?? oldData?.name ?? oldData?.data?.name);
 		if (!oldData && file.folder !== 'events') {
 			// changed the customID, need a full reload of that folder
 			ComponentLoader(client, file.folder);
