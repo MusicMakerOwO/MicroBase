@@ -80,7 +80,7 @@ function managePackages() {
 	const unusedPackages = installedPackages.filter(pkg => !filteredRequiredPackages.includes(pkg));
 	const missingPackages = [];
 	for (const pkg of filteredRequiredPackages) {
-		const cleanName = pkg.startsWith('@') ? pkg : pkg.split('/')[0];
+		const cleanName = pkg.startsWith('@') ? pkg.split('/').map((p, i) => i === 0 ? p : i === 1 ? p : null).filter(Boolean).join('/') : pkg.split('/')[0];
 		if (fs.existsSync(`${__dirname}/../node_modules/${cleanName}`)) {
 			continue;
 		}
