@@ -7,23 +7,23 @@ const EventLoader = require('../utils/EventLoader.js');
 
 const FILE_TEMPLATE = {
 	folder: 'myFolder',
-	eventType: 'change',
-	filename: 'myFile.js'
+	eventName: 'change',
+	fileName: 'myFile.js'
 }
 
 module.exports = {
 	name: 'hotReload',
 	execute: async function (client, file = FILE_TEMPLATE) {
 
-		if (!file.folder || !file.eventType || !file.filename) {
+		if (!file.folder || !file.eventName || !file.fileName) {
 			client.logs.warn(`[RELOAD] Invalid file event detected - Ignoring...`);
 			client.logs.warn(file);
 			return;
 		}
 
-		if (!file.filename.endsWith('.js')) return;
+		if (!file.fileName.endsWith('.js')) return;
 
-		const fullPath = path.resolve(`${__dirname}/../${file.folder}/${file.filename}`);
+		const fullPath = path.resolve(`${__dirname}/../${file.folder}/${file.fileName}`);
 		if (fullPath === __filename) return; // ignore this file
 		if (!fs.existsSync(fullPath)) {
 			client.logs.warn(`[RELOAD] File does not exist - Was it deleted or renamed?`);
@@ -94,13 +94,13 @@ module.exports = {
 				break;
 		}
 
-		if (!needsRegister) return client.logs.debug(`[RELOAD] Successfully reloaded ${file.folder}/${file.filename}`);
+		if (!needsRegister) return client.logs.debug(`[RELOAD] Successfully reloaded ${file.folder}/${file.fileName}`);
 
 		client.logs.info('Started refreshing application (/) commands');
 		RegisterCommands(client);
 		client.logs.info('Successfully reloaded application (/) commands');
 
-		client.logs.debug(`[RELOAD] Successfully reloaded ${file.folder}/${file.filename}`);
+		client.logs.debug(`[RELOAD] Successfully reloaded ${file.folder}/${file.fileName}`);
 		client.logs.debug(`[RELOAD] If the new command is not showing up restart your discord client!`);
 	}
 }
