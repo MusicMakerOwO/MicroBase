@@ -18,10 +18,7 @@ module.exports = {
 	IPC_UNKNOWN_ERROR: 199,
 
 	// Hot reload detection
-	RELOAD_FILE_CHANGE: 200,
-	RELOAD_NEW_FOLDER: 201,
-	RELOAD_DELETE_FOLDER: 202,
-	RELOAD_NEW_FILE: 203,
-	RELOAD_DELETE_FILE: 204,
-	// rename is a combination of delete and new0
+	HOT_RELOAD: 200,
+	// type and file are defined in the data object
+	// rename is a combination of delete and create
 }

@@ -153,6 +153,9 @@ module.exports = class ShardManager {
 				// oopsies something broke
 				request.reject(data);
 				break;
+			case MessageTypes.HOT_RELOAD:
+				// { type: 200, data: { folder, eventType, filename } }
+				this.#client.emit('hotReload', data);
 			default:
 				request.reject(`Unknown message type: ${type}`);
 				break;
