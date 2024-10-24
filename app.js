@@ -75,5 +75,5 @@ client.login(client.config.TOKEN);
 client.on('ready', function () {
 	client.logs.custom(`Logged in as ${client.user.tag}!`, 0x7946ff);
 
-	require('./utils/FileWatch.js')(client); // listener for hot loading
+	if (!process.send) require('./utils/FileWatch.js')(client); // listener for hot loading
 });
