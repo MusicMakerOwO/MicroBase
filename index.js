@@ -1,6 +1,7 @@
 const https = require('node:https');
 const fs = require('node:fs');
 const ChildProcess = require('node:child_process'); // shards are spawned as child processes
+const EventListener = require('node:events');
 
 const MIN_SHARDS = 1;
 const MAX_SHARDS = 16;
@@ -18,7 +19,7 @@ const ComponentLoader = require('./utils/ComponentLoader.js');
 
 // We don't want to run this on the bot instance or it will run for each and every shard lol
 const RegisterCommands = require('./utils/RegisterCommands.js');
-
+const FileWatch = require('./utils/FileWatch.js');
 
 const config = require('./config.json');
 const errors = [];
@@ -326,7 +327,7 @@ function AppendLogs(type, shardID, message, silent = false) {
 }
 
 function BindListeners(child, shardID) {
-
+	child.on('message', ProcessIPCMessage);
 	child.stdout.on('data', AppendLogs.bind(null, LOG_TYPES.INFO, shardID));
 	child.stderr.on('data', AppendLogs.bind(null, LOG_TYPES.ERROR, shardID));
 	child.on('exit', code => {
@@ -427,7 +428,10 @@ function ResetTimeout(requestID) {
 
 const activeRequests = new Map(); // <requestID, results[]>
 const requestTimeouts = new Map(); // <requestID, timeout>
-process.on('message', message => {
+function ProcessIPCMessage(message) {
+	
+	// console.log('data:', message);
+
 	if (typeof message !== 'object' || message === null) {
 		console.warn('[~] Invalid message received');
 		console.warn(message);
@@ -461,7 +465,7 @@ process.on('message', message => {
 		return;
 	}
 
-	if (!Object.keys(MessageTypes).includes(type)) {
+	if (!Object.values(MessageTypes).includes(type)) {
 		shard.send({ type: MessageTypes.IPC_UNKNOWN_TYPE, requestID });
 		return;
 	}
@@ -505,10 +509,10 @@ process.on('message', message => {
 			}
 			break;
 		case MessageTypes.SHARD_READY:
-			console.log(`[~] Shard ${shardID} is ready`);
+			console.warn(`[~] Shard ${shardID} is ready`);
 			break;
 		case MessageTypes.LOG:
-			console.log(data);
+			AppendLogs(data.type ?? LOG_TYPES.INFO, shardID, data.message);
 			break;
 		case MessageTypes.SHUTDOWN:
 			// no lol
@@ -519,10 +523,22 @@ process.on('message', message => {
 		case MessageTypes.IPC_UNKNOWN_ERROR:
 			// TODO: error handling
 			break;
+		case MessageTypes.HOT_RELOAD:
+			// will never be recieved by manager
+			break;
 		default:
 			console.warn(`[~] Unknown message type: ${type}`);
 	}
+}
+
+const hotReloadEvents = new EventListener();
+FileWatch(hotReloadEvents);
+hotReloadEvents.on('hotReload', (reloadData) => {
+	for (const shard of shards.values()) {
+		shard.send({ type: MessageTypes.HOT_RELOAD, requestID: 'hot-reload', data: reloadData });
+	}
 });
+
 
 // This is actually the main entry point, everything else is just setup o_O
 ( async () => {
@@ -539,11 +555,3 @@ process.on('message', message => {
 		CreateShard(i, shardCount);
 	}
 })();
-
-function ConvertMapToObject(map) {
-	const obj = {};
-	for (const [key, value] of map.entries()) {
-		obj[key] = value;
-	}
-	return obj;
-}
