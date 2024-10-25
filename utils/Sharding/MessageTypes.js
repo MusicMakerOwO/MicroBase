@@ -8,6 +8,7 @@ module.exports = {
 	LOG: 6,
 	HEARTBEAT: 7,
 	HEARTBEAT_ACK: 8,
+	REGISTER_COMMANDS: 9,
 	
 	SHUTDOWN: 99,
 

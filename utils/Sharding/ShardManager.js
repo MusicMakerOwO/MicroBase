@@ -56,6 +56,10 @@ module.exports = class ShardManager {
 
 	broadcast (type, data = null) {
 		if (!isFinite(this.shardID) || !process.send) throw new Error('Sharding is not enabled, make sure you ran the manager in the index.js file');
+		if (typeof type === 'string') {
+			type = MessageTypes[type];
+			if (!type) throw new Error('Invalid message type');
+		}
 		const requestID = this.generateRequestID();
 		process.send({
 			type: type,
@@ -64,6 +68,10 @@ module.exports = class ShardManager {
 			data: data
 		});
 		return requestID;
+	}
+
+	broadcastRegister () {
+		this.broadcast(MessageTypes.REGISTER_COMMANDS);
 	}
 
 	broadcastReady () {

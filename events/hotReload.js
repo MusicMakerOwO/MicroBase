@@ -61,9 +61,13 @@ module.exports = {
 			// changed the customID, need a full reload of that folder
 			ComponentLoader(client, file.folder);
 			if (file.folder === 'commands') {
-				client.logs.info('Started refreshing application (/) commands');
-				RegisterCommands(client);
-				client.logs.info('Successfully reloaded application (/) commands');
+				if (process.send) {
+					client.shards.broadcastRegister();
+				} else {
+					client.logs.info('Started refreshing application (/) commands');
+					RegisterCommands(client);
+					client.logs.info('Successfully reloaded application (/) commands');
+				}
 			}
 			return;
 		}
@@ -96,9 +100,13 @@ module.exports = {
 
 		if (!needsRegister) return client.logs.debug(`[RELOAD] Successfully reloaded ${file.folder}/${file.fileName}`);
 
-		client.logs.info('Started refreshing application (/) commands');
-		RegisterCommands(client);
-		client.logs.info('Successfully reloaded application (/) commands');
+		if (process.send) {
+			client.shards.broadcastRegister();
+		} else {
+			client.logs.info('Started refreshing application (/) commands');
+			RegisterCommands(client);
+			client.logs.info('Successfully reloaded application (/) commands');
+		}
 
 		client.logs.debug(`[RELOAD] Successfully reloaded ${file.folder}/${file.fileName}`);
 		client.logs.debug(`[RELOAD] If the new command is not showing up restart your discord client!`);
