@@ -16,7 +16,7 @@ const ShardManager = require('./utils/Sharding/ShardManager.js');
 
 const { Client } = require('discord.js');
 const client = new Client({
-	... shardID ? {
+	... isFinite(shardID) ? {
 		shardCount: shardCount,
 		shards: shardID,
 	} : {},
@@ -33,8 +33,7 @@ client.logs = require('./utils/Logs.js');
 client.cooldowns = new Map();
 client.activeCollectors = new Map(); // <messageID, collector>
 client.responseCache = new Map(); // <commandName, response>
-client.shards = new ShardManager(client, shardID, shardCount);
-
+client.shards = new ShardManager(client, shardID, shardCount); // class will not initialize if shardID is not a number, reduces memory overhead
 
 const modules = [
 	'commands',
@@ -75,5 +74,9 @@ client.login(client.config.TOKEN);
 client.on('ready', function () {
 	client.logs.custom(`Logged in as ${client.user.tag}!`, 0x7946ff);
 
-	if (!process.send) require('./utils/FileWatch.js')(client); // listener for hot loading
+	if (!process.send) {
+		require('./utils/FileWatch.js')(client); // listener for hot loading
+	} else {
+		client.shards.broadcastReady();
+	}
 });
