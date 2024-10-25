@@ -120,7 +120,12 @@ function NeedsRegister(oldCommands, newCommands) {
 	return false;
 }
 
+let lastRegister = 0;
 async function DynamicRegister() {
+
+	if (Date.now() - lastRegister < 1000 * 5) return; // 5 second cooldown
+	lastRegister = Date.now();
+
 	console.log('Checking commands, this may take a second...');
 	const oldCommands = {};
 	const newCommands = {};
@@ -143,10 +148,6 @@ async function DynamicRegister() {
 
 	const registeredCommands = await MakeRequest('GET', `https://discord.com/api/v10/applications/${config.APP_ID}/commands`, null); // Array
 
-	if (registeredCommands.length === 0) {
-		await RegisterCommands(components);
-		return;
-	}
 	// oldCommands = Object.fromEntries(registeredCommands.map(command => [command.name, command]));
 	for (const command of registeredCommands) {
 		oldCommands[command.name] = SimplifyCommand(command);
@@ -158,10 +159,6 @@ async function DynamicRegister() {
 	if (!needsRegister && config.DEV_GUILD_ID.length > 0) {
 		const registeredDevCommands = await MakeRequest('GET', `https://discord.com/api/v10/applications/${config.APP_ID}/guilds/${config.DEV_GUILD_ID}/commands`, null); // Array
 
-		if (registeredDevCommands.length === 0) {
-			RegisterCommands(components);
-			return;
-		}
 		// oldDevCommands = Object.fromEntries(registeredDevCommands.map(command => [command.name, command]));
 		for (const command of registeredDevCommands) {
 			oldDevCommands[command.name] = SimplifyCommand(command);
@@ -430,7 +427,7 @@ const activeRequests = new Map(); // <requestID, results[]>
 const requestTimeouts = new Map(); // <requestID, timeout>
 function ProcessIPCMessage(message) {
 	
-	// console.log('data:', message);
+	console.log('data:', message);
 
 	if (typeof message !== 'object' || message === null) {
 		console.warn('[~] Invalid message received');
@@ -525,6 +522,9 @@ function ProcessIPCMessage(message) {
 			break;
 		case MessageTypes.HOT_RELOAD:
 			// will never be recieved by manager
+			break;
+		case MessageTypes.REGISTER_COMMANDS:
+			DynamicRegister();
 			break;
 		default:
 			console.warn(`[~] Unknown message type: ${type}`);
