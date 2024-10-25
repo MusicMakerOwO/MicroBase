@@ -6,13 +6,17 @@ const GuildCache = new Map();
 
 module.exports = class ShardManager {
 	#client = null;
-	contructor (client, shardID, shardCount) {
+	constructor (client, shardID, shardCount) {
+		if (!process.send) return null; // cancel initialization if sharding is not enabled
+
 		this.#client = client;
 
 		this.shardID = shardID;
 		this.shardCount = shardCount;
 
 		this.activeRequests = new Map(); // <requestID, Promise>
+
+		this.ready = false;
 
 		process.on('message', this.handleIncomingMessage.bind(this));
 	}
@@ -50,8 +54,8 @@ module.exports = class ShardManager {
 		});
 	}
 
-	broadcast (type, data) {
-		if (isNaN(this.shardID) || !process.send) throw new Error('Sharding is not enabled, make sure you ran the manager in the index.js file');
+	broadcast (type, data = null) {
+		if (!isFinite(this.shardID) || !process.send) throw new Error('Sharding is not enabled, make sure you ran the manager in the index.js file');
 		const requestID = this.generateRequestID();
 		process.send({
 			type: type,
@@ -63,7 +67,9 @@ module.exports = class ShardManager {
 	}
 
 	broadcastReady () {
+		if (this.ready) return;
 		this.broadcast(MessageTypes.SHARD_READY);
+		this.ready = true;
 	}
 
 	async broadcastEval (script) {
@@ -96,7 +102,7 @@ module.exports = class ShardManager {
 	
 		const { type, shardID, requestID, data } = message;
 	
-		if (!Object.keys(MessageTypes).includes(type)) {
+		if (!Object.values(MessageTypes).includes(type)) {
 			process.send({ type: MessageTypes.IPC_UNKNOWN_TYPE, requestID });
 			return;
 		}
@@ -107,6 +113,11 @@ module.exports = class ShardManager {
 		}
 		
 		if (shardID && shardID !== this.shardID) return;
+
+		if (requestID === 'hot-reload') {
+			this.#client.emit('hotReload', data);
+			return;
+		}
 
 		const request = this.activeRequests.get(requestID);
 		if (!request) return;
@@ -153,9 +164,6 @@ module.exports = class ShardManager {
 				// oopsies something broke
 				request.reject(data);
 				break;
-			case MessageTypes.HOT_RELOAD:
-				// { type: 200, data: { folder, eventType, filename } }
-				this.#client.emit('hotReload', data);
 			default:
 				request.reject(`Unknown message type: ${type}`);
 				break;
