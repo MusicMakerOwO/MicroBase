@@ -398,8 +398,8 @@ async function Shutdown() {
 
 	// Something didn't close fully so we need to force it
 	if (shards.size > 0) {
-		for (const shard of shards.values()) {
-			shard.kill();
+		for (const child of shards.values()) {
+			child.kill();
 		}
 		console.warn('[~] Forced shutdown of all shards');
 	}
