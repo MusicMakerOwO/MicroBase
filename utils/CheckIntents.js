@@ -91,8 +91,6 @@ module.exports = function (client) {
 		}
 	}
 
-	if (missingIntents.size === 0) return;
-
 	// Some fancy lookup stuff lol
 	// We flip the table around so we can lookup names from bits
 	const EventNames = Object.fromEntries( Object.entries(GatewayIntentBits).map(([key, value]) => [value, key]) ); // flip key and value for fasater lookup
@@ -113,5 +111,5 @@ module.exports = function (client) {
 	newBitField.add('Guilds'); // Why would you ever leave this out???
 	client.options.intents = newBitField;
 
-	Logs.warn(`Applied missing intents: ${missingIntentNames.join(', ')}`);
+	if (missingIntents.size > 0) Logs.warn(`Applied missing intents: ${missingIntentNames.join(', ')}`);
 }
