@@ -16,6 +16,7 @@ const MessageTypes = require('./utils/Sharding/MessageTypes.js'); // enum for sh
 const Prompt = require('./utils/Prompt.js');
 const CRC32 = require('./utils/crc32.js');
 const ComponentLoader = require('./utils/ComponentLoader.js');
+const ReadFolder = require('./utils/ReadFolder.js');
 
 // We don't want to run this on the bot instance or it will run for each and every shard lol
 const RegisterCommands = require('./utils/RegisterCommands.js');
@@ -132,6 +133,14 @@ async function DynamicRegister() {
 
 	const oldDevCommands = {};
 	const newDevCommands = {};
+
+	// We have to clear the cache since JS likes to check that first
+	// It's helpful to prevent memory leaks and re-compiling code
+	// However it doesn't update if the file contents change so we have to do that ourselves
+	const currentFiles = ReadFolder('./commands');
+	for (const file of currentFiles) {
+		delete require.cache[require.resolve(file.path)];
+	}
 
 	const components = {
 		commands: new Map()
@@ -427,7 +436,7 @@ const activeRequests = new Map(); // <requestID, results[]>
 const requestTimeouts = new Map(); // <requestID, timeout>
 function ProcessIPCMessage(message) {
 	
-	console.log('data:', message);
+	// console.log('data:', message);
 
 	if (typeof message !== 'object' || message === null) {
 		console.warn('[~] Invalid message received');
