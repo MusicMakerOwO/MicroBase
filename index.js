@@ -88,7 +88,7 @@ function StringifyFunction(key, value) {
 function SimplifyCommand(command) {
 	return {
 		name: command.name,
-		description: command.description,
+		description: command.description ?? '',
 		type: command.type ?? 1,
 		options: command.options ?? [],
 		dm_permission: command.dm_permission ?? false,
@@ -143,9 +143,11 @@ async function DynamicRegister() {
 	}
 
 	const components = {
-		commands: new Map()
+		commands: new Map(),
+		context: new Map()
 	}
 	ComponentLoader(components, 'commands');
+	ComponentLoader(components, 'context');
 
 	for (const [name, command] of components.commands.entries()) {
 		if (command.dev) {
@@ -153,6 +155,10 @@ async function DynamicRegister() {
 		} else {
 			newCommands[name] = SimplifyCommand(command.data);
 		}
+	}
+
+	for (const [name, command] of components.context.entries()) {
+		newCommands[name] = SimplifyCommand(command.data);
 	}
 
 	const registeredCommands = await MakeRequest('GET', `https://discord.com/api/v10/applications/${config.APP_ID}/commands`, null); // Array
