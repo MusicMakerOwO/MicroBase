@@ -5,7 +5,7 @@ module.exports = async function (client) {
 	const commands = [];
 	const devCommands = [];
 	const commandNames = [];
-	for (const [_, command] of client.commands) {
+	for (const command of [...client.commands.values(), ...client.context.values()] ) {
 		const commandData = typeof command.data?.toJSON === 'function' ? command.data.toJSON() : command.data;
 		commandData.dm_permission ??= false; // dms false by default
 		try {

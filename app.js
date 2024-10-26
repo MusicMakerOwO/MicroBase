@@ -36,6 +36,7 @@ client.responseCache = new Map(); // <commandName, response>
 client.shards = new ShardManager(client, shardID, shardCount); // class will not initialize if shardID is not a number, reduces memory overhead
 
 const modules = [
+	'context',
 	'commands',
 	'buttons',
 	'menus',

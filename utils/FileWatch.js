@@ -3,6 +3,7 @@ const path = require('node:path');
 const Debounce = require('./Debounce.js');
 
 const FOLDERS = [
+	'context',
 	'commands',
 	'buttons',
 	'modals',

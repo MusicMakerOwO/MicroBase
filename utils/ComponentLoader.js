@@ -73,11 +73,13 @@ module.exports = function (client, folder = null) {
 					}
 					break;
 				case 'commands':
-					if (!data.data) throw 'No data property found';
-					addComponent(client[folder], data.data.name, data);
 					for (const alias of data.aliases) {
 						addComponent(client[folder], alias, { ...data, data: { ...data.data, name: alias } });
 					}
+					// fallthrough to context since they share the same structure
+				case 'context':
+					if (!data.data) throw 'No data property found';
+					addComponent(client[folder], data.data.name, data);
 					break;
 				case 'buttons':
 				case 'menus':

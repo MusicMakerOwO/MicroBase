@@ -63,7 +63,7 @@ module.exports = {
 		if (!oldData && file.folder !== 'events') {
 			// changed the customID, need a full reload of that folder
 			ComponentLoader(client, file.folder);
-			needsRegister = file.folder === 'commands';
+			needsRegister = file.folder === 'commands' || file.folder === 'context';
 		}
 
 		if (!needsRegister) {
@@ -75,6 +75,7 @@ module.exports = {
 					cache.set(newFile.customID ?? newFile.name, newFile);
 					break;
 				case 'commands':
+				case 'context':
 					const oldData = cache.get(newFile.data.name);
 					// only register commands if fileData.data has changed in any way
 					const oldDataJSON = JSON.stringify( typeof oldData?.data?.toJSON === 'function' ? oldData?.data?.toJSON() : oldData?.data);

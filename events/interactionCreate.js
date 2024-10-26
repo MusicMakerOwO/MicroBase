@@ -21,13 +21,21 @@ module.exports = {
 
 		switch (interaction.type) {
 			case 4: // Autocomplete
-			case 2: // Slash Commands
-				const subcommand = interaction.options._subcommand ?? "";
-				const subcommandGroup = interaction.options._subcommandGroup ?? "";
-				const commandArgs = interaction.options._hoistedOptions ?? [];
-				const args = `${subcommandGroup} ${subcommand} ${commandArgs.map(arg => arg.value).join(" ")}`.trim();
-				client.logs.info(`${interaction.user.tag} (${interaction.user.id}) > /${interaction.commandName} ${args}`);
-				await BoundHandler('commands');
+			case 2: // Slash Commands + Context Menus
+				if (interaction.commandType === 1) {
+					const subcommand = interaction.options._subcommand ?? "";
+					const subcommandGroup = interaction.options._subcommandGroup ?? "";
+					const commandArgs = interaction.options._hoistedOptions ?? [];
+					const args = `${subcommandGroup} ${subcommand} ${commandArgs.map(arg => arg.value).join(" ")}`.trim();
+					client.logs.info(`${interaction.user.tag} (${interaction.user.id}) > /${interaction.commandName} ${args}`);
+					await BoundHandler('commands');
+				} else if (interaction.commandType === 3) {
+					client.logs.info(`${interaction.user.tag} (${interaction.user.id}) > :${interaction.commandName}:`);
+					await BoundHandler('context');
+				} else {
+					client.logs.warn(`Unknown command type: ${interaction.commandType}`);
+					client.logs.warn('Unsure how to handle this...');
+				}
 				break;
 			case 3: // Message Components
 				if (interaction.isButton()) {
