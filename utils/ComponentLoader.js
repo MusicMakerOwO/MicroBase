@@ -50,6 +50,9 @@ module.exports = function (client, folder = null) {
 			if (data.cooldown && typeof data.cooldown !== 'number') throw 'Invalid cooldown type - Must be a number (seconds)';
 			if (data.cooldown && data.cooldown < 0) throw 'Invalid cooldown time - Must be greater than 0';
 
+			// true: ephemeral, false: public, null: no defer
+			if (data.defer && typeof data.defer !== 'boolean') throw 'Invalid defer type - Must be a boolean';
+
 			const aliases = data.alias ?? data.aliases ?? [];
 			if (aliases && (folder === 'commands' || folder === 'messages')) {
 				if (!Array.isArray(aliases) && typeof aliases !== 'string') throw 'Invalid alias type - Must be a string or an array';

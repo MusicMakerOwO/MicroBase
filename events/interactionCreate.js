@@ -79,6 +79,10 @@ async function InteractionHandler(client, interaction, type) {
 		return;
 	}
 
+	if ('defer' in component && component.defer !== null) {
+		await interaction.deferReply({ ephemeral: component.defer }).catch(() => {});
+	}
+
 	try {
 		CheckGuildAccess(component.guilds, interaction.guildId);
 		CheckUserAccess(component.roles, component.users, interaction.member, interaction.user);
@@ -97,10 +101,10 @@ async function InteractionHandler(client, interaction, type) {
 			CheckPermissions(client, component.userPerms, interaction.member); // user
 		}
 	} catch ([response, reason]) {
-		await interaction.reply({
-			content: response,
-			ephemeral: true
-		}).catch(() => { });
+		await interaction.deferReply({ ephemeral: true }).catch(() => { });
+		await interaction.editReply({
+			content: response
+		}).catch(() => {});
 		client.logs.error(`Blocked user from ${type}: ${reason}`);
 		return;
 	}
@@ -122,7 +126,6 @@ async function InteractionHandler(client, interaction, type) {
 			embeds: [],
 			components: [],
 			files: [],
-			ephemeral: true
 		}).catch(() => {});
 	}
 }
