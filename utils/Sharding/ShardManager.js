@@ -145,7 +145,13 @@ module.exports = class ShardManager {
 				break;
 			case MessageTypes.BROADCAST_EVAL:
 				const script = Function(data.script);
-				const result = await script(this.#client);
+				let result = null;
+				try {
+					result = await script(this.#client);
+				} catch (error) {
+					result = error.toString();
+				}
+				console.log(result);
 				this.broadcast(MessageTypes.BROADCAST_EVAL_RESULT, { requestID, result });
 				break;
 			case MessageTypes.FETCH_CLIENT_VALUE:
