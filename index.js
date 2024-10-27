@@ -7,6 +7,8 @@ const MIN_SHARDS = 2;
 const MAX_SHARDS = 16;
 const GUILDS_PER_SHARD = 2000;
 
+const MAX_START_TIME = 10_000; // 30 seconds
+
 // Won't catch any missing packages in this file since it is pre-compiled
 // It will work on the second run, so either run this twice or install manually
 require('./utils/CheckPackages.js')();
@@ -240,6 +242,11 @@ let shuttingDown = false;
 const shards = new Map(); // <shardID, process> - shards are spawned as child processes
 const shardCrashes = new Map(); // <shardID, last timestamp>
 function CreateShard(shardID, shardCount = shards.size) {
+	if (shards.get(shardID) === null) {
+		console.error(`[~] Shard ${shardID} is dead, not respawning`);
+		return;
+	}
+
 	const shard = ChildProcess.fork('./app.js', [shardID, shardCount], {
 		// JSON serialization allows for transmission of primitive types but not much else
 		// Things like numbers, strings, booleans, arrays, and objects are fine
@@ -255,6 +262,12 @@ function CreateShard(shardID, shardCount = shards.size) {
 	BindListeners(shard, shardID);
 	shards.set(shardID, shard);
 	shardCrashes.set(shardID, Date.now());
+	shardKillTimeouts.set(shardID, setTimeout(() => {
+		console.error(`[~] Shard ${shardID} did not start within 30 seconds, shard is likely dead`);
+		shards.set(shardID, null);
+		shard.kill();
+	}, MAX_START_TIME));
+	return shard;
 }
 
 function ClearLine() {
@@ -349,21 +362,39 @@ function BindListeners(child, shardID) {
 		console.warn(`[~] Shard ${shardID} exited with code ${code}`);
 		AppendLogs(LOG_TYPES.ERROR, shardID, `Shard ${shardID} exited with code ${code}`, true);
 
-		shards.delete(shardID);
-		if (code !== 0 && !shuttingDown) {
-			const lastCrash = shardCrashes.get(shardID);
-			const timeSinceCrash = Date.now() - lastCrash;
-			if (timeSinceCrash < 10_000) {
-				console.error(`[~] Shard ${shardID} crashed too quickly [${timeSinceCrash}ms], not respawning`);
-				AppendLogs(LOG_TYPES.ERROR, shardID, `Shard ${shardID} crashed too quickly [${timeSinceCrash}ms], not respawning`, true);
-				return;
-			}
-			
-			console.error(`[~] Restarting shard ${shardID}...`);
-			AppendLogs(LOG_TYPES.ERROR, shardID, `Restarting shard ${shardID}...`, true);
+		if (shards.get(shardID) !== null) {
+			shards.delete(shardID);
+			if (code !== 0 && !shuttingDown) {
+				const lastCrash = shardCrashes.get(shardID);
+				const timeSinceCrash = Date.now() - lastCrash;
+				if (timeSinceCrash < 10_000) {
+					console.error(`[~] Shard ${shardID} crashed too quickly [${timeSinceCrash}ms], not respawning`);
+					AppendLogs(LOG_TYPES.ERROR, shardID, `Shard ${shardID} crashed too quickly [${timeSinceCrash}ms], not respawning`, true);
+					return;
+				}
+				
+				console.error(`[~] Restarting shard ${shardID}...`);
+				AppendLogs(LOG_TYPES.ERROR, shardID, `Restarting shard ${shardID}...`, true);
 
-			const newShard = CreateShard(shardID, shards.size + 1);
-			shards.set(shardID, newShard);
+				const newShard = CreateShard(shardID, shards.size + 1);
+				shards.set(shardID, newShard);
+			}
+		}
+
+		if (shuttingDown) return;
+
+		let allShardsDead = true;
+		for (const shard of shards.values()) {
+			if (shard !== null) {
+				allShardsDead = false;
+				break;
+			}
+		}
+
+		if (allShardsDead) {
+			console.log('\x1b[34m[~] All shards have died, shutting down...');
+			AppendLogs(LOG_TYPES.ERROR, shardID, 'All shards have died, shutting down...', true);
+			Shutdown();
 		}
 	});
 }
@@ -379,9 +410,20 @@ async function Shutdown() {
 		process.exit(0);
 	}
 
+	for (const heartbeat of shardHeartbeats.values()) {
+		clearInterval(heartbeat);
+	}
+	for (const timeout of shardKillTimeouts.values()) {
+		clearTimeout(timeout);
+	}
+
 	ClearLine();
 	console.warn('[~] Shutting down...');
-	for (const shard of shards.values()) {
+	for (const [id, shard] of shards.entries()) {
+		if (shard === null) {
+			shards.delete(id);
+			continue;
+		}
 		if (!shard?.connected) continue;
 		shard.shutdown();
 	}
@@ -395,11 +437,11 @@ async function Shutdown() {
 		shutdownAttempts++;
 	}
 
-
 	// Something didn't close fully so we need to force it
 	if (shards.size > 0) {
 		for (const child of shards.values()) {
-			child.kill();
+			if (child === null) continue;
+			child?.kill();
 		}
 		console.warn('[~] Forced shutdown of all shards');
 	}
@@ -437,6 +479,9 @@ function ResetTimeout(requestID) {
 
 	requestTimeouts.set(requestID, newTimeout);
 }
+
+const shardKillTimeouts = new Map(); // <shardID, timeout>
+const shardHeartbeats = new Map(); // <shardID, interval>
 
 const activeRequests = new Map(); // <requestID, results[]>
 const requestTimeouts = new Map(); // <requestID, timeout>
@@ -522,6 +567,21 @@ function ProcessIPCMessage(message) {
 			break;
 		case MessageTypes.SHARD_READY:
 			console.warn(`[~] Shard ${shardID} is ready`);
+			// fallthrough to code below
+		case MessageTypes.HEARTBEAT_ACK:
+			const activeKillTimeout = shardKillTimeouts.get(shardID);
+			if (activeKillTimeout) clearTimeout(activeKillTimeout);
+			
+			if (!shardHeartbeats.has(shardID)) {
+				shardHeartbeats.set(shardID, setInterval(() => {
+					// send a heartbeat every 60 seconds, kill if no response within 10 seconds
+					shard.send({ type: MessageTypes.HEARTBEAT, requestID: 'heartbeat' });
+					shardKillTimeouts.set(shardID, setTimeout(() => {
+						console.error(`[~] Shard ${shardID} did not respond to heartbeat, assuming frozen`);
+						shard.kill();
+					}, 10_000));
+				}, 60_000));
+			}
 			break;
 		case MessageTypes.LOG:
 			AppendLogs(data.type ?? LOG_TYPES.INFO, shardID, data.message);
