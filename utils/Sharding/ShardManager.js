@@ -54,13 +54,13 @@ module.exports = class ShardManager {
 		});
 	}
 
-	broadcast (type, data = null) {
+	broadcast (type, data = null, requestID = '') {
 		if (!isFinite(this.shardID) || !process.send) throw new Error('Sharding is not enabled, make sure you ran the manager in the index.js file');
 		if (typeof type === 'string') {
 			type = MessageTypes[type];
 			if (!type) throw new Error('Invalid message type');
 		}
-		const requestID = this.generateRequestID();
+		if (requestID.length === 0) requestID = this.generateRequestID();
 		process.send({
 			type: type,
 			requestID: requestID,
@@ -85,8 +85,7 @@ module.exports = class ShardManager {
 			script: Function.prototype.toString.call(script)
 		};
 		const requestID = this.broadcast(MessageTypes.BROADCAST_EVAL, payload);
-		const result = await this.waitForRequest(requestID);
-		return result;
+		return this.waitForRequest(requestID);
 	}
 
 	// "guilds.cache.size"
@@ -119,16 +118,8 @@ module.exports = class ShardManager {
 			process.send({ type: MessageTypes.IPC_UNKNOWN_REQUEST_ID });
 			return;
 		}
-		
-		if (shardID && shardID !== this.shardID) return;
-
-		if (requestID === 'hot-reload') {
-			this.#client.emit('hotReload', data);
-			return;
-		}
 
 		const request = this.activeRequests.get(requestID);
-		if (!request) return;
 
 		switch (type) {
 			case MessageTypes.HEARTBEAT:
@@ -138,33 +129,29 @@ module.exports = class ShardManager {
 				// In this case it won't get a graceful shutdown and will be forcefully killed
 				break;
 			case MessageTypes.BROADCAST_EVAL_RESULT:
+				if (!request) return;
 				request.resolve(data);
 				break;
 			case MessageTypes.SHUTDOWN:
 				this.#client.emit('shutdown');
 				break;
 			case MessageTypes.BROADCAST_EVAL:
-				const script = Function(data.script);
-				let result = null;
-				try {
-					result = await script(this.#client);
-				} catch (error) {
-					result = error.toString();
-				}
-				console.log(result);
-				this.broadcast(MessageTypes.BROADCAST_EVAL_RESULT, { requestID, result });
+				eval(`(${data.script})()`);
 				break;
 			case MessageTypes.FETCH_CLIENT_VALUE:
 				const fields = data.key.split('.');
 				let value = this.#client;
 				for (const field of fields) {
 					value = value[field];
-					if (typeof value === 'undefined' || value === null) {
+					if (typeof value === undefined || value === null) {
 						value = null;
 						break;
 					}
 				}
-				this.broadcast(MessageTypes.BROADCAST_EVAL_RESULT, { requestID, value });
+				this.broadcast(MessageTypes.BROADCAST_EVAL_RESULT, { shardID: this.shardID, value }, requestID);
+				break;
+			case MessageTypes.HOT_RELOAD:
+				this.#client.emit('hotReload', data);
 				break;
 			case MessageTypes.SHARD_READY:
 			case MessageTypes.PERFORMANCE_METRICS:
@@ -175,11 +162,18 @@ module.exports = class ShardManager {
 			case MessageTypes.IPC_INVALID_PAYLOAD:
 			case MessageTypes.IPC_UNKNOWN_REQUEST_ID:
 			case MessageTypes.IPC_UNKNOWN_ERROR:
-				// oopsies something broke
-				request.reject(data);
+				if (request) {
+					request.reject(data);
+				} else {
+					console.warn(`Received an error message without a request:`, data);
+				}
 				break;
 			default:
-				request.reject(`Unknown message type: ${type}`);
+				if (request) {
+					request.reject(`Unknown message type: ${type}`);
+				} else {
+					console.warn(`Unknown message type: ${type}`);
+				}
 				break;
 		}
 	}

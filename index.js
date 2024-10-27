@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const ChildProcess = require('node:child_process'); // shards are spawned as child processes
 const EventListener = require('node:events');
 
-const MIN_SHARDS = 1;
+const MIN_SHARDS = 2;
 const MAX_SHARDS = 16;
 const GUILDS_PER_SHARD = 2000;
 
@@ -498,7 +498,7 @@ function ProcessIPCMessage(message) {
 			if (results.length === shards.size) {
 				// every shard has responded, no more waiting
 				for (const shard of shards.values()) {
-					shard.send({ type: MessageTypes.BROADCAST_EVAL_RESULT, requestID, result: results });
+					shard.send({ type: MessageTypes.BROADCAST_EVAL_RESULT, requestID: requestID, data: results });
 				}
 				activeRequests.delete(requestID);
 			} else {
