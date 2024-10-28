@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const ChildProcess = require('node:child_process'); // shards are spawned as child processes
 const EventListener = require('node:events');
 
-const MIN_SHARDS = 2;
+const MIN_SHARDS = 1;
 const MAX_SHARDS = 16;
 const GUILDS_PER_SHARD = 2000;
 
