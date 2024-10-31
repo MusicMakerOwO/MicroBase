@@ -29,12 +29,9 @@ module.exports = {
 					const args = `${subcommandGroup} ${subcommand} ${commandArgs.map(arg => arg.value).join(" ")}`.trim();
 					client.logs.info(`${interaction.user.tag} (${interaction.user.id}) > /${interaction.commandName} ${args}`);
 					await BoundHandler('commands');
-				} else if (interaction.commandType === 3) {
+				} else {
 					client.logs.info(`${interaction.user.tag} (${interaction.user.id}) > :${interaction.commandName}:`);
 					await BoundHandler('context');
-				} else {
-					client.logs.warn(`Unknown command type: ${interaction.commandType}`);
-					client.logs.warn('Unsure how to handle this...');
 				}
 				break;
 			case 3: // Message Components
