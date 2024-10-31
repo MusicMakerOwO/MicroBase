@@ -466,6 +466,14 @@ process.on('warning', console.warn);
 // Process exit handler
 process.on('exit', Shutdown);
 
+function ForceKill(shardID) {
+	const shard = shards.get(shardID);
+	if (!shard) return;
+	if (!shard.connected) return;
+	if (shard.killed) return;
+	shard.kill();
+}
+
 // IPC relays
 function ResetTimeout(requestID) {
 	const oldTimeout = requestTimeouts.get(requestID);
@@ -575,10 +583,12 @@ function ProcessIPCMessage(message) {
 			if (!shardHeartbeats.has(shardID)) {
 				shardHeartbeats.set(shardID, setInterval(() => {
 					// send a heartbeat every 60 seconds, kill if no response within 10 seconds
+					const shard = shards.get(shardID);
+					if (!shard) return;
 					shard.send({ type: MessageTypes.HEARTBEAT, requestID: 'heartbeat' });
 					shardKillTimeouts.set(shardID, setTimeout(() => {
 						console.error(`[~] Shard ${shardID} did not respond to heartbeat, assuming frozen`);
-						shard.kill();
+						ForceKill(shardID);
 					}, 10_000));
 				}, 60_000));
 			}
