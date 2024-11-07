@@ -3,7 +3,6 @@
     "discord.js": "^14.16.3"
   },
   "devDependencies": {
-    "dts-bundle-generator": "^9.5.1",
     "sucrase": "^3.35.0",
     "typescript": "^5.6.3"
   }
