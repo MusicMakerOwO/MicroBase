@@ -32,6 +32,9 @@ for (const file in files) {
 console.log('Checking compilation errors...');
 execSync(`tsc -p ${__dirname}/tsconfig.json --noEmit`, { stdio: 'inherit' });
 
+console.log('Clearing old JS files...');
+fs.rmSync(`${__dirname}/JS`, { recursive: true, force: true });
+
 console.log('Compiling to JS...');
 execSync(`npx sucrase ${__dirname}/TS --out-dir ${__dirname}/JS --transforms typescript,imports`, { stdio: 'inherit' });
 
@@ -64,12 +67,24 @@ class Client extends _Events2.default {
 
 console.log('Cleaning up...');
 
+const topComment = `
+//////////////////////////////////////////////////////////////////////
+// Welcome to MicroBase!											//
+// This code is written in TypeScript and compiled using Sucrase	//
+// For any issues, please report them on the GitHub repository		//
+// https://github.com/MusicMakerOwO/MicroBase/issues				//
+//////////////////////////////////////////////////////////////////////
+`.trim();
+
 files = {};
 ReadFolder(`${__dirname}/JS`);
 for (const file in files) {
 	const content = files[file];
-	const newContent = content.replace(/\n{3,}/g, '\n\n');
-	fs.writeFileSync(file, newContent);
+	const newContent = content
+		.replace(/\n{3,}/g, '\n\n')
+		// sucrase adds this at the top of every file but we aren't targetting ESM
+		.replace('Object.defineProperty(exports, "__esModule", {value: true});', '');
+	fs.writeFileSync(file, topComment + '\n\n' + newContent);
 }
 
 console.log('Done!');
