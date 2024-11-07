@@ -24,7 +24,7 @@ const ReadFolder = require('./utils/ReadFolder.js');
 const RegisterCommands = require('./utils/RegisterCommands.js');
 const FileWatch = require('./utils/FileWatch.js');
 
-const config = require('./config.json');
+const config = require('../config.json');
 const errors = [];
 
 if (typeof config.TOKEN !== 'string' || config.TOKEN.length === 0) {

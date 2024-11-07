@@ -28,7 +28,7 @@ const client = new Client({
 });
 
 // Type checking is done in index.js
-client.config = require('./config.json');
+client.config = require('../config.json');
 client.logs = require('./utils/Logs.js');
 client.cooldowns = new Map();
 client.activeCollectors = new Map(); // <messageID, collector>
