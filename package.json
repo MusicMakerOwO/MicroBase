@@ -1,9 +1,13 @@
 {
-  "dependencies": {
-    "discord.js": "^14.16.3"
-  },
-  "devDependencies": {
-    "sucrase": "^3.35.0",
-    "typescript": "^5.6.3"
-  }
+	"dependencies": {
+		"discord.js": "^14.16.3"
+	},
+	"devDependencies": {
+		"sucrase": "^3.35.0",
+		"typescript": "^5.6.3"
+	},
+	"scripts": {
+		"build": "node ./build.js",
+		"start": "node ./JS/index.js"
+	}
 }
