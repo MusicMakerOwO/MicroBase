@@ -1,4 +1,4 @@
-import { Client, Interaction, Events } from 'discord.js';
+import { Client, Interaction, Events, SlashCommandBuilder } from 'discord.js';
 
 // This is the outlier lol
 export interface EventFile {
@@ -16,7 +16,7 @@ export interface File {
 
 	// Permissions
 	userPerms?: string[];
-	clientPerms?: string[];
+	botPerms?: string[];
 
 	// Flags
 	dev?: boolean;
@@ -25,8 +25,8 @@ export interface File {
 	defer?: boolean;
 
 	// Alias(es)
-	alias?: string | string[];
-	aliases?: string | string[];
+	alias?: string | string[]; // gets converted to 'aliases' in the loader
+	aliases: string | string[];
 
 	execute: (interaction: Interaction, client: MicroClient, args?: string[]) => Promise<any>;
 }
@@ -44,6 +44,7 @@ export interface ComponentFile extends File {
 // Messages
 export interface MessageFile extends File {
 	name: string;
+	description: string;
 }
 
 export interface MicroClient extends Client {
