@@ -3,5 +3,9 @@
 	"APP_ID": "",
 	"DEV_GUILD_ID": "",
 
-	"PREFIX": "!"
+	"PREFIX": "!",
+
+	"HOT_RELOAD": true,
+	"PROCESS_HANDLERS": true,
+	"CHECK_PACKAGES": true
 }
