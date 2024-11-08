@@ -1,4 +1,4 @@
-export const Permissions = {
+export default {
 	CreateInstantInvite: 1n << 0n,
     KickMembers: 1n << 1n,
     BanMembers: 1n << 2n,
