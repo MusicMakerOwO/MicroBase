@@ -1,5 +1,5 @@
 import MessageTypes from './MessageTypes';
-import MicroClient from '../../app';
+import { MicroClient } from '../../typings';
 
 export default class ShardManager {
 	#client!: MicroClient;

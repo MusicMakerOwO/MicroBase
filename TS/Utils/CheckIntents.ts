@@ -1,7 +1,7 @@
 import { GatewayIntentBits } from 'discord-api-types/v10';
 import { BitField } from 'discord.js';
 import Logs from './Logs';
-import MicroClient from '../app';
+import { MicroClient } from '../typings';
 
 // Why does DJS have to make this difficult?
 // Have to recreate the BitField class since they don't export it

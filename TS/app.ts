@@ -14,28 +14,9 @@ import ComponentLoader from './Utils/ComponentLoader';
 import EventLoader from './Utils/EventLoader';
 import Log from './Utils/Logs';
 
+import { MicroClient } from './typings';
+
 ProcessHandler();
-
-interface MicroClient extends Client {
-	config: Record<string, any>;
-	logs: typeof Log;
-	cooldowns: Map<string, number>;
-	activeCollectors: Map<string, any>;
-	responseCache: Map<string, any>;
-	shards: ShardManager;
-
-	// it's part of the builtin EventEmitter but TS doesn't like it lol
-	_events: Record<string, Function[]>;
-
-	// Components
-	context: Map<string, any>;
-	commands: Map<string, any>;
-	buttons: Map<string, any>;
-	menus: Map<string, any>;
-	modals: Map<string, any>;
-	messages: Map<string, any>;
-}
-export default MicroClient;
 
 
 import { Client } from 'discord.js';
