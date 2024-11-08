@@ -84,7 +84,7 @@ for (const file in files) {
 		.replace(/\n{3,}/g, '\n\n')
 		// sucrase adds this at the top of every file but we aren't targetting ESM
 		.replace('Object.defineProperty(exports, "__esModule", {value: true});', '')
-		.replace(/s*\/\/\s*@ts\-ignore/g, '')
+		.replace(/s*\/\/\s*@ts\-ignore.*\n?\t*/g, '')
 	fs.writeFileSync(file, topComment + '\n\n' + newContent);
 }
 
