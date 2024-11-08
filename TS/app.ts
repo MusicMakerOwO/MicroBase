@@ -48,6 +48,7 @@ const modules = [
 
 for (let i = 0; i < modules.length; i++) {
 	const module = modules[i];
+	// @ts-ignore
 	ComponentLoader(client, module);
 	// The map is initialized in the ComponentLoader
 	// @ts-ignore - TS doesn't like dynamic properties
