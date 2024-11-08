@@ -88,4 +88,7 @@ for (const file in files) {
 	fs.writeFileSync(file, topComment + '\n\n' + newContent);
 }
 
+// Sucrase doesn't understand how typings work lmfao
+fs.rmSync(`${__dirname}/JS/typings.d.js`);
+
 console.log('Done!');
