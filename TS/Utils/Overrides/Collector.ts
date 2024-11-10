@@ -53,3 +53,4 @@ export default class Collector extends EventEmitter {
 		this.destroy();
 	}
 }
+module.exports = exports.default;
