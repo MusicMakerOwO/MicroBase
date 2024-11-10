@@ -78,3 +78,4 @@ async function MakeRequest(method: string, route: string, body: RESTPostAPIChatI
 		req.end();
 	});
 }
+module.exports = exports.default;
