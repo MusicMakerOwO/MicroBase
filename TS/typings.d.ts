@@ -1,4 +1,8 @@
-import { Client, Interaction, Events, SlashCommandBuilder } from 'discord.js';
+import { Client, Events, SlashCommandBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, ButtonInteraction as _Button, UserSelectMenuInteraction, StringSelectMenuInteraction, RoleSelectMenuInteraction, ContextMenuInteraction as _Context, ModalSubmitInteraction } from 'discord.js';
+type AnySelectMenuInteraction = UserSelectMenuInteraction | StringSelectMenuInteraction | RoleSelectMenuInteraction;
+import ShardManager from './Utils/Sharding/ShardManager';
+import Collector from './Utils/Overrides/Collector';
 
 // This is the outlier lol
 export interface EventFile {
@@ -58,6 +62,8 @@ export interface MicroClient extends Client {
 	// it's part of the builtin EventEmitter but TS doesn't like it lol
 	_events: Record<string, Function[]>;
 
+	shards: ShardManager | null;
+
 	// Components
 	context: Map<string, CommandFile>;
 	commands: Map<string, CommandFile>;
@@ -65,4 +71,24 @@ export interface MicroClient extends Client {
 	menus: Map<string, ComponentFile>;
 	modals: Map<string, ComponentFile>;
 	messages: Map<string, MessageFile>;
+}
+
+export interface CommandInteraction extends ChatInputCommandInteraction {
+	createCollector: () => Collector;
+}
+
+export interface ButtonInteraction extends _Button {
+	createCollector: () => Collector;
+}
+
+export interface MenuInteraction extends AnySelectMenuInteraction {
+	createCollector: () => Collector;
+}
+
+export interface ModalInteraction extends ModalSubmitInteraction {
+	createCollector: () => Collector;
+}
+
+export interface ContextMenuInteraction extends _Context {
+	createCollector: () => Collector;
 }
