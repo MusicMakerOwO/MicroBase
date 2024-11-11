@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { MicroClient } from '../typings';
-const Debounce = require('./Debounce.js');
+import Debounce from './Debounce';
 
 const FOLDERS = [
 	'context',
