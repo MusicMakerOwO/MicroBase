@@ -12,11 +12,11 @@ export default class Collector extends EventEmitter {
 	#clearTimeout: NodeJS.Timeout | null;
 	public interaction: ChatInputCommandInteraction | ButtonInteraction;
 
-	constructor(client: MicroClient, interaction: ChatInputCommandInteraction | ButtonInteraction) {
+	constructor(client: MicroClient, interaction: (ChatInputCommandInteraction | ButtonInteraction) & { messageID: string }) {
 		super();
 
-		// @ts-ignore - Added internally by custom overrides
-		this.messageID = interaction.messageID ?? interaction.message?.id;
+		// @ts-ignore Added internally by custom overrides
+		this.messageID = 'messageID' in interaction ? interaction.messageID : interaction.message?.id;
 		if (!this.messageID) throw new Error('Interaction must have a message, make sure you replied first');
 
 		this.#client = client;
