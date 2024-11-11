@@ -12,12 +12,12 @@ for (let i = 0; i < 256; i++) {
 }
 
 export default function CRC32(str: string) {
-	let crc = 0 ^ -1;
+	let crc = -1;
 	for (let i = 0; i < str.length; i++) {
 		crc = table[(crc ^ str.charCodeAt(i)) & 0xff] ^ crc >>> 8;
 	}
 
-	const hash = (crc ^ -1) >>> 0;
+	const hash = -(crc + 1) >>> 0;
 	return hash.toString(16).padStart(8, '0');
 }
 module.exports = exports.default;
