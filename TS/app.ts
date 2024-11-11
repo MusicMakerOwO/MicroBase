@@ -6,8 +6,10 @@ if (shardID && isNaN(shardCount)) {
 	process.exit(1);
 }
 
-// import InteractionOverride from './Utils/Override/Interaction';
-// import InteractionEventOverride from './Utils/Override/InteractionEvent';
+// These 2 modules run on automatically so we don't care about the return value
+import './Utils/Overrides/Interactions';
+import './Utils/Overrides/InteractionEvent';
+
 import ProcessHandler from './Utils/ProcessHandler';
 import ShardManager from './Utils/Sharding/ShardManager';
 import ComponentLoader from './Utils/ComponentLoader';
