@@ -83,7 +83,7 @@ export default class ShardManager {
 	}
 
 	// "guilds.cache.size"
-	async fetchClientValue (key: string) {
+	async fetchClientValue (key: string) : Promise<Array<{ shardID: number, value: any }>> {
 		const requestID = this.broadcast(MessageTypes.FETCH_CLIENT_VALUE, { key });
 		const result = await this.waitForRequest(requestID);
 		return result;
