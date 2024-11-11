@@ -1,6 +1,8 @@
 import { Client, Events, SlashCommandBuilder } from 'discord.js';
-import { ChatInputCommandInteraction, ButtonInteraction as _Button, UserSelectMenuInteraction, StringSelectMenuInteraction, RoleSelectMenuInteraction, ContextMenuInteraction as _Context, ModalSubmitInteraction } from 'discord.js';
+import { ChatInputCommandInteraction, ButtonInteraction as _Button, UserSelectMenuInteraction, StringSelectMenuInteraction, RoleSelectMenuInteraction, ModalSubmitInteraction, ContextMenuCommandInteraction as _Context } from 'discord.js';
+import { BaseInteraction, InteractionReplyOptions } from 'discord.js';
 type AnySelectMenuInteraction = UserSelectMenuInteraction | StringSelectMenuInteraction | RoleSelectMenuInteraction;
+type Interaction = ChatInputCommandInteraction | _Button | AnySelectMenuInteraction | ModalSubmitInteraction | _Context;
 import ShardManager from './Utils/Sharding/ShardManager';
 import Collector from './Utils/Overrides/Collector';
 
@@ -73,22 +75,37 @@ export interface MicroClient extends Client {
 	messages: Map<string, MessageFile>;
 }
 
-export interface CommandInteraction extends ChatInputCommandInteraction {
+export interface MicroInteractionResponse extends InteractionReplyOptions {
+	hidden?: boolean;
+}
+
+export interface MicroInteraction {
+	reply: (options: string | MicroInteractionResponse) => Promise<any>;
+	editReply: (options: string | MicroInteractionResponse) => Promise<any>;
+	deferReply: (options: string | MicroInteractionResponse) => Promise<any>;
+	deferUpdate: (options: string | MicroInteractionResponse) => Promise<any>;
+	deleteReply: (message?: string) => Promise<any>;
+	followUp: (options: string | MicroInteractionResponse) => Promise<any>;
+	fetchReply: (message?: string) => Promise<any>;
+	showModal: (modal: any) => Promise<any>;
+}
+
+export interface CommandInteraction extends MicroInteraction, ChatInputCommandInteraction {
 	createCollector: () => Collector;
 }
 
-export interface ButtonInteraction extends _Button {
+export interface ButtonInteraction extends MicroInteraction, _Button {
 	createCollector: () => Collector;
 }
 
-export interface MenuInteraction extends AnySelectMenuInteraction {
+export interface MenuInteraction extends MicroInteraction, AnySelectMenuInteraction {
 	createCollector: () => Collector;
 }
 
-export interface ModalInteraction extends ModalSubmitInteraction {
+export interface ModalInteraction extends MicroInteraction, ModalSubmitInteraction {
 	createCollector: () => Collector;
 }
 
-export interface ContextMenuInteraction extends _Context {
+export interface ContextMenuInteraction extends MicroInteraction, _Context {
 	createCollector: () => Collector;
 }
