@@ -16,3 +16,4 @@ export default {
 		await interaction.reply(`Total guilds: ${totalGuilds}\nShard count: ${shardCount}\n\n${shards}`);
 	}
 }
+module.exports = exports.default;
