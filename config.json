@@ -7,5 +7,7 @@
 
 	"HOT_RELOAD": true,
 	"PROCESS_HANDLERS": true,
-	"CHECK_PACKAGES": true
+	"CHECK_PACKAGES": true,
+	"CHECK_INTENTS": true,
+	"REGISTER_COMMANDS": true
 }
