@@ -2,6 +2,7 @@ import { GatewayIntentBits } from 'discord-api-types/v10';
 import { BitField } from 'discord.js';
 import Logs from './Logs';
 import { MicroClient } from '../typings';
+const { CHECK_INTENTS } = require('../config.json') as { CHECK_INTENTS: boolean };
 
 // Why does DJS have to make this difficult?
 // Have to recreate the BitField class since they don't export it
@@ -68,6 +69,7 @@ const REQUIRED_INTENTS: Record<string, number[]> = {
 }
 
 export default function (client: MicroClient) {
+	if (!CHECK_INTENTS) return;
 
 	const missingIntents = new Set<number>();
 

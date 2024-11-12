@@ -7,6 +7,8 @@ import { MicroClient } from '../typings';
 import { RESTPostAPIChatInputApplicationCommandsJSONBody } from 'discord.js';
 
 export default async function (client: MicroClient) {
+	if (!config.REGISTER_COMMANDS) return;
+	
 	const commands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [];
 	const devCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [];
 	const commandNames: string[] = [];

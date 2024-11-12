@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { MicroClient } from '../typings';
 import Debounce from './Debounce';
+const { HOT_RELOAD } = require('../config.json') as { HOT_RELOAD: boolean };
 
 const FOLDERS = [
 	'context',
@@ -59,6 +60,7 @@ function WatchFolder (client: MicroClient, folder: string, filePath: string) {
 }
 
 export default function (client: MicroClient) {
+	if (!HOT_RELOAD) return;
 	for (const folder of FOLDERS) {
 		const filePath = path.join(__dirname, '..', folder);
 		WatchFolder(client, folder, filePath);
