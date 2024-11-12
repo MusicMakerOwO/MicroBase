@@ -10,18 +10,18 @@ if (shardID && isNaN(shardCount)) {
 import './Utils/Overrides/Interactions';
 import './Utils/Overrides/InteractionEvent';
 
-import ProcessHandler from './Utils/ProcessHandler';
+import './Utils/ProcessHandler';
+
+if (!process.send) require('./Utils/CheckPackages');
+
 import ShardManager from './Utils/Sharding/ShardManager';
 import ComponentLoader from './Utils/ComponentLoader';
 import EventLoader from './Utils/EventLoader';
 import Log from './Utils/Logs';
 
 import { MicroClient } from './typings';
-
-ProcessHandler();
-
-
 import { Client } from 'discord.js';
+
 const client = new Client({
 	... isFinite(shardID) ? { shards: [shardID, shardCount] } : {},
 	intents: [
