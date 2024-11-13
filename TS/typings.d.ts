@@ -29,6 +29,7 @@ export interface File {
 	cooldown?: number;
 	cache?: boolean;
 	defer?: boolean;
+	owner?: boolean;
 
 	// Alias(es)
 	alias?: string | string[]; // gets converted to 'aliases' in the loader

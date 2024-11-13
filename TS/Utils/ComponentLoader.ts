@@ -51,6 +51,8 @@ export default function (client: MicroClient, folder: 'commands' | 'context' | '
 				if (data.guilds.every(guild => typeof guild !== 'string')) throw `Invalid guilds type - Must be an array of strings`;
 			}
 
+			if (data.owner && typeof data.owner !== 'boolean') throw 'Invalid owner type - Must be a boolean';
+
 			if (data.dev && typeof data.dev !== 'boolean') throw 'Invalid dev type - Must be a boolean';
 			
 			if (data.cooldown && typeof data.cooldown !== 'number') throw 'Invalid cooldown type - Must be a number (seconds)';
