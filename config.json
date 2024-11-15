@@ -9,5 +9,6 @@
 	"PROCESS_HANDLERS": true,
 	"CHECK_PACKAGES": true,
 	"CHECK_INTENTS": true,
+	"CHECK_EVENT_NAMES": true,
 	"REGISTER_COMMANDS": true
 }

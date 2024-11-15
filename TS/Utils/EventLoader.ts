@@ -3,6 +3,7 @@ import { Events } from 'discord.js';
 import ReadFolder from './ReadFolder.js';
 import Logs from './Logs.js';
 import { MicroClient, EventFile } from '../typings';
+const { CHECK_EVENT_NAMES } = require('../config.json') as { CHECK_EVENT_NAMES: boolean };
 
 const IGNORED_EVENTS = [
 	'hotReload',
@@ -28,17 +29,15 @@ export default function (client: MicroClient) {
 				data.name = String(data.name).toLowerCase().replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 			}
 
-			// @ts-ignore
-			if (Events[data.name]) data.name = Events[data.name];
+			if (Events[data.name as keyof typeof Events]) data.name = Events[data.name as keyof typeof Events];
 
-			// @ts-ignore
-			if (!Events[data.name] && !Object.values(Events).includes(data.name) && !IGNORED_EVENTS.includes(data.name)) {
+			if (CHECK_EVENT_NAMES && !IGNORED_EVENTS.includes(data.name) && !Object.values(Events).includes(data.name as Events)) {
 				Logs.warn(`Possibly invalid event name "${data.name}" - Unless it is a custom event this will never be called!`);
 			}
 			
 			if (typeof data.execute !== 'function') throw `Event is missing an execute function!`;
 
-			client[data.once ? 'once' : 'on'](data.name, data.execute.bind(null, client));
+			(data.once ? client.once : client.on)(data.name, data.execute.bind(null, client));
 		} catch (error) {
 			Logs.error(`Failed to load event ${path}`);
 			Logs.error(error);
