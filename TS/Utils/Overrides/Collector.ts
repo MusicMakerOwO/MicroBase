@@ -16,7 +16,7 @@ export default class Collector extends EventEmitter {
 		super();
 
 		// @ts-ignore Added internally by custom overrides
-		this.messageID = 'messageID' in interaction ? interaction.messageID : interaction.message?.id;
+		this.messageID = 'messageID' in interaction ? interaction.messageID : interaction.message.id;
 		if (!this.messageID) throw new Error('Interaction must have a message, make sure you replied first');
 
 		this.#client = client;
@@ -47,7 +47,7 @@ export default class Collector extends EventEmitter {
 		this.emit('collect', interaction);
 	}
 
-	end = this.handleEnd;
+	end() { this.handleEnd(); }
 	handleEnd() {
 		this.emit('end');
 		this.destroy();

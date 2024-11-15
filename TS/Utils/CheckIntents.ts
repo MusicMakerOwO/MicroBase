@@ -87,7 +87,7 @@ export default function (client: MicroClient) {
 	// We flip the table around so we can lookup names from bits
 	const EventNames: Record<number, string> = Object.fromEntries( Object.entries(GatewayIntentBits).map(([key, value]) => [value, key]) );
 	const missingIntentNames = Array.from(missingIntents).map(bit => {
-		return EventNames[bit] ?? 'unknown';
+		return EventNames[bit] || 'unknown';
 	});
 
 	// Apply missing intents

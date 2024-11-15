@@ -18,7 +18,7 @@ class InteractionOverrides {
 	async deferReply(options = {}) {
 		if (typeof options === 'string') options = { content: options };
 		if (this.deferred || this.replied) return;
-		this.ephemeral = options.hidden ?? options.ephemeral ?? false;
+		this.ephemeral = options.hidden || options.ephemeral || false;
 		await this.client.rest.post(Routes.interactionCallback(this.id, this.token), {
 			body: {
 				type: InteractionResponseType.DeferredChannelMessageWithSource,
@@ -41,12 +41,12 @@ class InteractionOverrides {
 		if (this.replied) return this.followUp(options);
 		
 		if (typeof options === 'string') options = { content: options };
-		options.ephemeral = options.hidden ?? options.ephemeral ?? false;
+		options.ephemeral = options.hidden || options.ephemeral || false;
 
 		const messagePayload = options instanceof MessagePayload ? options : MessagePayload.create(this, options);
 
 		if (this.allowCache) {
-			this.client.responseCache.set(this.commandName ?? this.customId, messagePayload);
+			this.client.responseCache.set(this.commandName || this.customId, messagePayload);
 		}
 
 		const { body: data, files } = await messagePayload.resolveBody().resolveFiles();
@@ -84,11 +84,11 @@ class InteractionOverrides {
 
 	async editReply(options) {
 		if (!this.deferred && !this.replied) return this.reply(options);
-		const msg = await this.webhook.editMessage(options.message ?? '@original', options);
+		const msg = await this.webhook.editMessage(options.message || '@original', options);
 		this.replied = true;
 
 		if (this.allowCache) {
-			this.client.responseCache.set(this.commandName ?? this.customId, options);
+			this.client.responseCache.set(this.commandName || this.customId, options);
 		}
 
 		return msg;

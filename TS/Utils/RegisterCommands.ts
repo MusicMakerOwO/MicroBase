@@ -13,10 +13,10 @@ export default async function (client: MicroClient) {
 	const devCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [];
 	const commandNames: string[] = [];
 	for (const command of [...client.commands.values(), ...client.context.values()] ) {
-		const commandData = typeof command.data?.toJSON === 'function' ? command.data.toJSON() : command.data as unknown as RESTPostAPIChatInputApplicationCommandsJSONBody;
+		const commandData = ('toJSON' in command.data && typeof command.data.toJSON === 'function') ? command.data.toJSON() : command.data as unknown as RESTPostAPIChatInputApplicationCommandsJSONBody;
 		try {
 			if (!commandData) throw `No command.data found - Did you forget to save the file?`;
-			if (commandNames.includes(commandData?.name)) continue;
+			if (commandNames.includes(commandData.name)) continue;
 			commandNames.push(commandData.name);
 			if (command.dev) {
 				devCommands.push(commandData);

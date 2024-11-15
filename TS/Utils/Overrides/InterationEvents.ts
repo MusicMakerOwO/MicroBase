@@ -92,7 +92,7 @@ function handle(data: any) { // type isn't relevant in the slightest
 	 * @param {BaseInteraction} interaction The interaction which was created
 	 */
 
-	const messageID = interaction.messageID ?? interaction.messageId ?? interaction.message?.id;
+	const messageID = interaction.messageID || interaction.messageId || 'message' in interaction ? interaction.message.id : null;
 
 	const activeCollector = client.activeCollectors.get(messageID);
 	if (activeCollector) {
