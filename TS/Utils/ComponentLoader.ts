@@ -51,9 +51,13 @@ export default function (client: MicroClient, folder: 'commands' | 'context' | '
 				if (data.guilds.every(guild => typeof guild !== 'string')) throw `Invalid guilds type - Must be an array of strings`;
 			}
 
-			if (data.owner && typeof data.owner !== 'boolean') throw 'Invalid owner type - Must be a boolean';
+			if (data.channels) {
+				if (!Array.isArray(data.channels)) throw `Invalid channels type - Must be an array`;
+				if (data.channels.every(channel => typeof channel !== 'string')) throw `Invalid channels type - Must be an array of strings`;
+			}
 
 			if (data.dev && typeof data.dev !== 'boolean') throw 'Invalid dev type - Must be a boolean';
+			if (data.owner && typeof data.owner !== 'boolean') throw 'Invalid owner type - Must be a boolean';
 			
 			if (data.cooldown && typeof data.cooldown !== 'number') throw 'Invalid cooldown type - Must be a number (seconds)';
 			if (data.cooldown && data.cooldown < 0) throw 'Invalid cooldown time - Must be greater than 0';
@@ -61,7 +65,7 @@ export default function (client: MicroClient, folder: 'commands' | 'context' | '
 			// true: ephemeral, false: public, null: no defer
 			if (data.defer && typeof data.defer !== 'boolean') throw 'Invalid defer type - Must be a boolean';
 
-			const aliases = data.alias ?? data.aliases ?? [];
+			const aliases = data.alias || data.aliases || [];
 			if (aliases && (folder === 'commands' || folder === 'messages')) {
 				if (!Array.isArray(aliases) && typeof aliases !== 'string') throw 'Invalid alias type - Must be a string or an array';
 				data.aliases = Array.isArray(aliases) ? aliases : [aliases];
