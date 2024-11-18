@@ -1,6 +1,5 @@
-import { Client, Events, SlashCommandBuilder } from 'discord.js';
+import { Client, SlashCommandBuilder, Message, InteractionReplyOptions } from 'discord.js';
 import { ChatInputCommandInteraction, ButtonInteraction as _Button, UserSelectMenuInteraction, StringSelectMenuInteraction, RoleSelectMenuInteraction, ModalSubmitInteraction, ContextMenuCommandInteraction as _Context, AutocompleteInteraction as _Autocomplete} from 'discord.js';
-import { BaseInteraction, InteractionReplyOptions } from 'discord.js';
 type AnySelectMenuInteraction = UserSelectMenuInteraction | StringSelectMenuInteraction | RoleSelectMenuInteraction;
 import ShardManager from './Utils/Sharding/ShardManager';
 import Collector from './Utils/Overrides/Collector';
@@ -35,25 +34,26 @@ export interface File {
 	// Alias(es)
 	alias?: string | string[]; // gets converted to 'aliases' in the loader
 	aliases: string | string[];
-
-	autocomplete?: (interaction: MicroInteraction, client: MicroClient, args?: string[]) => Promise<any>;
-	execute: (interaction: MicroInteraction, client: MicroClient, args?: string[]) => Promise<any>;
 }
 
 // Slash Commands, Autocomplete, Context Menu
 export interface CommandFile extends File {
 	data: SlashCommandBuilder;
+	autocomplete?: (interaction: MicroInteraction, client: MicroClient, args?: string[]) => Promise<any>;
+	execute: (interaction: MicroInteraction, client: MicroClient, args?: string[]) => Promise<any>;
 }
 
 // Buttons, Modals, Menus
 export interface ComponentFile extends File {
 	customID: string;
+	execute: (interaction: MicroInteraction, client: MicroClient, args?: string[]) => Promise<any>;
 }
 
 // Messages
 export interface MessageFile extends File {
 	name: string;
 	description: string;
+	execute: (message: Message, client: MicroClient, args?: string[]) => Promise<any>;
 }
 
 export interface MicroClient extends Client {
