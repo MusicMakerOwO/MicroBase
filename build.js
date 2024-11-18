@@ -81,7 +81,7 @@ ReadFolder(`${__dirname}/JS`);
 for (const file in files) {
 	const content = files[file];
 	const newContent = content
-		.replace(/\n{3,}/g, '\n\n')
+		.replace(/(\s?\n){3,}/g, '\n')
 		// sucrase adds this at the top of every file but we aren't targetting ESM
 		// .replace('Object.defineProperty(exports, "__esModule", {value: true});', '')
 		.replace(/s*\/\/\s*@ts\-ignore.*\n?\t*/g, '')
