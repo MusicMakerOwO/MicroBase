@@ -1,6 +1,7 @@
 import { Client, SlashCommandBuilder, Message, InteractionReplyOptions } from 'discord.js';
-import { ChatInputCommandInteraction, ButtonInteraction as _Button, UserSelectMenuInteraction, StringSelectMenuInteraction, RoleSelectMenuInteraction, ModalSubmitInteraction, ContextMenuCommandInteraction as _Context, AutocompleteInteraction as _Autocomplete} from 'discord.js';
+import { ChatInputCommandInteraction, ButtonInteraction as _Button, UserSelectMenuInteraction, StringSelectMenuInteraction, RoleSelectMenuInteraction, ModalSubmitInteraction, UserContextMenuCommandInteraction, MessageContextMenuCommandInteraction, AutocompleteInteraction as _Autocomplete} from 'discord.js';
 type AnySelectMenuInteraction = UserSelectMenuInteraction | StringSelectMenuInteraction | RoleSelectMenuInteraction;
+type AnyContextMenu = UserContextMenuCommandInteraction | MessageContextMenuCommandInteraction;
 import ShardManager from './Utils/Sharding/ShardManager';
 import Collector from './Utils/Overrides/Collector';
 
@@ -95,11 +96,12 @@ export interface InteractionOverrides {
 	allowCache: boolean; // used internally to determine if the response should be cached
 }
 
-export type CommandInteraction 		= InteractionOverrides & ChatInputCommandInteraction;
-export type ButtonInteraction 		= InteractionOverrides & _Button;
-export type MenuInteraction 		= InteractionOverrides & AnySelectMenuInteraction;
-export type ModalInteraction 		= InteractionOverrides & ModalSubmitInteraction;
-export type ContextMenuInteraction 	= InteractionOverrides & _Context;
-export type AutocompleteInteraction = InteractionOverrides & _Autocomplete;
+export type CommandInteraction 			= InteractionOverrides & ChatInputCommandInteraction;
+export type ButtonInteraction 			= InteractionOverrides & _Button;
+export type MenuInteraction 			= InteractionOverrides & AnySelectMenuInteraction;
+export type ModalInteraction 			= InteractionOverrides & ModalSubmitInteraction;
+export type MessageContextInteraction 	= InteractionOverrides & MessageContextMenuCommandInteraction;
+export type UserContextInteraction 		= InteractionOverrides & UserContextMenuCommandInteraction;
+export type AutocompleteInteraction 	= InteractionOverrides & _Autocomplete;
 
-export type MicroInteraction = CommandInteraction | ButtonInteraction | MenuInteraction | ModalInteraction | ContextMenuInteraction | AutocompleteInteraction;
+export type MicroInteraction = CommandInteraction | ButtonInteraction | MenuInteraction | ModalInteraction | MessageContextInteraction | UserContextInteraction | AutocompleteInteraction;
