@@ -135,7 +135,9 @@ async function InteractionHandler(client: MicroClient, interaction: MicroInterac
 	try {
 		interaction.allowCache = Boolean(component.cache);
 		if (interaction.isAutocomplete()) {
-			if (!component.autocomplete) throw 'Autocomplete function not implemented';
+			// @ts-ignore
+			if (typeof component.autocomplete !== 'function') throw 'Autocomplete function not implemented';
+			// @ts-ignore
 			await component.autocomplete(interaction, client, type === 'commands' ? undefined : args);
 		} else {
 			await component.execute(interaction, client, type === 'commands' ? undefined : args);
