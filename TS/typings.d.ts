@@ -1,10 +1,11 @@
 import { Client, Events, SlashCommandBuilder } from 'discord.js';
-import { ChatInputCommandInteraction, ButtonInteraction as _Button, UserSelectMenuInteraction, StringSelectMenuInteraction, RoleSelectMenuInteraction, ModalSubmitInteraction, ContextMenuCommandInteraction as _Context } from 'discord.js';
+import { ChatInputCommandInteraction, ButtonInteraction as _Button, UserSelectMenuInteraction, StringSelectMenuInteraction, RoleSelectMenuInteraction, ModalSubmitInteraction, ContextMenuCommandInteraction as _Context, AutocompleteInteraction as _Autocomplete} from 'discord.js';
 import { BaseInteraction, InteractionReplyOptions } from 'discord.js';
 type AnySelectMenuInteraction = UserSelectMenuInteraction | StringSelectMenuInteraction | RoleSelectMenuInteraction;
-type Interaction = ChatInputCommandInteraction | _Button | AnySelectMenuInteraction | ModalSubmitInteraction | _Context;
 import ShardManager from './Utils/Sharding/ShardManager';
 import Collector from './Utils/Overrides/Collector';
+
+import Log from './Utils/Logs';
 
 // This is the outlier lol
 export interface EventFile {
@@ -35,7 +36,8 @@ export interface File {
 	alias?: string | string[]; // gets converted to 'aliases' in the loader
 	aliases: string | string[];
 
-	execute: (interaction: Interaction, client: MicroClient, args?: string[]) => Promise<any>;
+	autocomplete?: (interaction: MicroInteraction, client: MicroClient, args?: string[]) => Promise<any>;
+	execute: (interaction: MicroInteraction, client: MicroClient, args?: string[]) => Promise<any>;
 }
 
 // Slash Commands, Autocomplete, Context Menu
@@ -65,8 +67,6 @@ export interface MicroClient extends Client {
 	// it's part of the builtin EventEmitter but TS doesn't like it lol
 	_events: Record<string, Function[]>;
 
-	shards: ShardManager | null;
-
 	// Components
 	context: Map<string, CommandFile>;
 	commands: Map<string, CommandFile>;
@@ -80,7 +80,7 @@ export interface MicroInteractionResponse extends InteractionReplyOptions {
 	hidden?: boolean;
 }
 
-export interface MicroInteraction {
+export interface InteractionOverrides {
 	reply: (options: string | MicroInteractionResponse) => Promise<any>;
 	editReply: (options: string | MicroInteractionResponse) => Promise<any>;
 	deferReply: (options: string | MicroInteractionResponse) => Promise<any>;
@@ -89,24 +89,17 @@ export interface MicroInteraction {
 	followUp: (options: string | MicroInteractionResponse) => Promise<any>;
 	fetchReply: (message?: string) => Promise<any>;
 	showModal: (modal: any) => Promise<any>;
+
+	createCollector: () => Collector;
+
+	allowCache: boolean; // used internally to determine if the response should be cached
 }
 
-export interface CommandInteraction extends MicroInteraction, ChatInputCommandInteraction {
-	createCollector: () => Collector;
-}
+export type CommandInteraction 		= InteractionOverrides & ChatInputCommandInteraction;
+export type ButtonInteraction 		= InteractionOverrides & _Button;
+export type MenuInteraction 		= InteractionOverrides & AnySelectMenuInteraction;
+export type ModalInteraction 		= InteractionOverrides & ModalSubmitInteraction;
+export type ContextMenuInteraction 	= InteractionOverrides & _Context;
+export type AutocompleteInteraction = InteractionOverrides & _Autocomplete;
 
-export interface ButtonInteraction extends MicroInteraction, _Button {
-	createCollector: () => Collector;
-}
-
-export interface MenuInteraction extends MicroInteraction, AnySelectMenuInteraction {
-	createCollector: () => Collector;
-}
-
-export interface ModalInteraction extends MicroInteraction, ModalSubmitInteraction {
-	createCollector: () => Collector;
-}
-
-export interface ContextMenuInteraction extends MicroInteraction, _Context {
-	createCollector: () => Collector;
-}
+export type MicroInteraction = CommandInteraction | ButtonInteraction | MenuInteraction | ModalInteraction | ContextMenuInteraction | AutocompleteInteraction;
