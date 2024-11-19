@@ -10,9 +10,10 @@ assignees: ''
 **Describe the bug**
 A clear and concise description of what the bug is.
 
-**Code snippet to reproduce** `
+**Code snippet to reproduce**
+```ts
 console.log('do thing here');
-`
+```
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
