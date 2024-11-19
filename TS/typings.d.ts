@@ -1,4 +1,4 @@
-import { Client, SlashCommandBuilder, Message, InteractionReplyOptions } from 'discord.js';
+import { Client, SlashCommandBuilder, Message, InteractionReplyOptions, ContextMenuCommandBuilder } from 'discord.js';
 import { ChatInputCommandInteraction, ButtonInteraction as _Button, UserSelectMenuInteraction, StringSelectMenuInteraction, RoleSelectMenuInteraction, ModalSubmitInteraction, UserContextMenuCommandInteraction, MessageContextMenuCommandInteraction, AutocompleteInteraction as _Autocomplete} from 'discord.js';
 type AnySelectMenuInteraction = UserSelectMenuInteraction | StringSelectMenuInteraction | RoleSelectMenuInteraction;
 type AnyContextMenu = UserContextMenuCommandInteraction | MessageContextMenuCommandInteraction;
@@ -37,10 +37,15 @@ export interface File {
 	aliases: string | string[];
 }
 
-// Slash Commands, Autocomplete, Context Menu
+// Slash Commands, Autocomplete
 export interface CommandFile extends File {
 	data: SlashCommandBuilder;
 	autocomplete?: (interaction: MicroInteraction, client: MicroClient, args?: string[]) => Promise<any>;
+	execute: (interaction: MicroInteraction, client: MicroClient, args?: string[]) => Promise<any>;
+}
+
+export interface ContextFile extends File {
+	data: ContextMenuCommandBuilder;
 	execute: (interaction: MicroInteraction, client: MicroClient, args?: string[]) => Promise<any>;
 }
 
@@ -105,3 +110,10 @@ export type UserContextInteraction 		= InteractionOverrides & UserContextMenuCom
 export type AutocompleteInteraction 	= InteractionOverrides & _Autocomplete;
 
 export type MicroInteraction = CommandInteraction | ButtonInteraction | MenuInteraction | ModalInteraction | MessageContextInteraction | UserContextInteraction | AutocompleteInteraction;
+
+interface IPCMessage {
+	type: number;
+	shardID: number;
+	requestID: string;
+	data?: any;
+}

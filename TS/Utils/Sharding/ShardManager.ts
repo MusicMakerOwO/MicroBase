@@ -1,5 +1,5 @@
 import MessageTypes from './MessageTypes';
-import { MicroClient } from '../../typings';
+import { MicroClient, IPCMessage } from '../../typings';
 
 export default class ShardManager {
 	#client!: MicroClient;
@@ -23,7 +23,7 @@ export default class ShardManager {
 		process.on('message', this.handleIncomingMessage.bind(this));
 	}
 
-	respond(data: any) {
+	respond(data: IPCMessage) {
 		if (!process.send) return;
 		process.send(data);
 	}
@@ -89,7 +89,7 @@ export default class ShardManager {
 		return result;
 	}
 
-	async handleIncomingMessage (message: any) {
+	async handleIncomingMessage (message: IPCMessage) {
 
 		if (typeof message !== 'object' || message === null) {
 			console.warn('[~] Invalid message received');
@@ -100,12 +100,12 @@ export default class ShardManager {
 		const { type, requestID, data } = message as { type: number, shardID: number, requestID: string, data: any };
 	
 		if (!Object.values(MessageTypes).includes(type)) {
-			this.respond({ type: MessageTypes.IPC_UNKNOWN_TYPE, requestID });
+			this.respond({ type: MessageTypes.IPC_UNKNOWN_TYPE, shardID: this.shardID, requestID });
 			return;
 		}
 	
 		if (typeof requestID !== 'string' || requestID.length === 0) {
-			this.respond({ type: MessageTypes.IPC_UNKNOWN_REQUEST_ID });
+			this.respond({ type: MessageTypes.IPC_UNKNOWN_REQUEST_ID, shardID: this.shardID, requestID });
 			return;
 		}
 
