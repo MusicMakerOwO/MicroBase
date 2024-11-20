@@ -1,4 +1,4 @@
-export default async function Prompt(question = '') {
+export default async function Prompt(question = ''): Promise<string> {
     if (typeof question !== 'string') throw new Error('Question must be a string');
 
 	process.stdin.resume();
