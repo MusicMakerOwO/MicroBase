@@ -4,11 +4,11 @@
 
 'use strict';
 const { InteractionResponseType, MessageFlags, Routes, InteractionType } = require('discord-api-types/v10');
-const InteractionResponse = require(`${__dirname}/../../node_modules/discord.js/src/structures/InteractionResponse`);
-const MessagePayload = require(`${__dirname}/../../node_modules/discord.js/src/structures/MessagePayload`);
+const InteractionResponse = require(`${__dirname}/../../../node_modules/discord.js/src/structures/InteractionResponse`);
+const MessagePayload = require(`${__dirname}/../../../node_modules/discord.js/src/structures/MessagePayload`);
 
 // DJS really doesn't want you to edit this so we have to do it a little funny lol
-const InteractionResponses = require(`${__dirname}/../../node_modules/discord.js/src/structures/interfaces/InteractionResponses`);
+const InteractionResponses = require(`${__dirname}/../../../node_modules/discord.js/src/structures/interfaces/InteractionResponses`);
 
 const Collector = require('./Collector');
 
