@@ -1,20 +1,20 @@
 'use strict';
 
-const InteractionCreateAction = require(`${__dirname}/../../node_modules/discord.js/src/client/actions/InteractionCreate`);
+const InteractionCreateAction = require(`${__dirname}/../../../node_modules/discord.js/src/client/actions/InteractionCreate`);
 
 const { InteractionType: DiscordInteractionType, ComponentType, ApplicationCommandType } = require('discord-api-types/v10');
-const AutocompleteInteraction = require(`${__dirname}/../../node_modules/discord.js/src/structures/AutocompleteInteraction`);
-const ButtonInteraction = require(`${__dirname}/../../node_modules/discord.js/src/structures/ButtonInteraction`);
-const ChannelSelectMenuInteraction = require(`${__dirname}/../../node_modules/discord.js/src/structures/ChannelSelectMenuInteraction`);
-const ChatInputCommandInteraction = require(`${__dirname}/../../node_modules/discord.js/src/structures/ChatInputCommandInteraction`);
-const MentionableSelectMenuInteraction = require(`${__dirname}/../../node_modules/discord.js/src/structures/MentionableSelectMenuInteraction`);
-const MessageContextMenuCommandInteraction = require(`${__dirname}/../../node_modules/discord.js/src/structures/MessageContextMenuCommandInteraction`);
-const ModalSubmitInteraction = require(`${__dirname}/../../node_modules/discord.js/src/structures/ModalSubmitInteraction`);
-const RoleSelectMenuInteraction = require(`${__dirname}/../../node_modules/discord.js/src/structures/RoleSelectMenuInteraction`);
-const StringSelectMenuInteraction = require(`${__dirname}/../../node_modules/discord.js/src/structures/StringSelectMenuInteraction`);
-const UserContextMenuCommandInteraction = require(`${__dirname}/../../node_modules/discord.js/src/structures/UserContextMenuCommandInteraction`);
-const UserSelectMenuInteraction = require(`${__dirname}/../../node_modules/discord.js/src/structures/UserSelectMenuInteraction`);
-const Events = require(`${__dirname}/../../node_modules/discord.js/src/util/Events`);
+const AutocompleteInteraction = require(`${__dirname}/../../../node_modules/discord.js/src/structures/AutocompleteInteraction`);
+const ButtonInteraction = require(`${__dirname}/../../../node_modules/discord.js/src/structures/ButtonInteraction`);
+const ChannelSelectMenuInteraction = require(`${__dirname}/../../../node_modules/discord.js/src/structures/ChannelSelectMenuInteraction`);
+const ChatInputCommandInteraction = require(`${__dirname}/../../../node_modules/discord.js/src/structures/ChatInputCommandInteraction`);
+const MentionableSelectMenuInteraction = require(`${__dirname}/../../../node_modules/discord.js/src/structures/MentionableSelectMenuInteraction`);
+const MessageContextMenuCommandInteraction = require(`${__dirname}/../../../node_modules/discord.js/src/structures/MessageContextMenuCommandInteraction`);
+const ModalSubmitInteraction = require(`${__dirname}/../../../node_modules/discord.js/src/structures/ModalSubmitInteraction`);
+const RoleSelectMenuInteraction = require(`${__dirname}/../../../node_modules/discord.js/src/structures/RoleSelectMenuInteraction`);
+const StringSelectMenuInteraction = require(`${__dirname}/../../../node_modules/discord.js/src/structures/StringSelectMenuInteraction`);
+const UserContextMenuCommandInteraction = require(`${__dirname}/../../../node_modules/discord.js/src/structures/UserContextMenuCommandInteraction`);
+const UserSelectMenuInteraction = require(`${__dirname}/../../../node_modules/discord.js/src/structures/UserSelectMenuInteraction`);
+const Events = require(`${__dirname}/../../../node_modules/discord.js/src/util/Events`);
 
 // TS has no knowdledge of bound function so `this` will always be unreachable
 function handle(data: any) { // type isn't relevant in the slightest
