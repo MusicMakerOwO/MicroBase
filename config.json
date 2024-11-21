@@ -11,5 +11,6 @@
 	"CHECK_INTENTS": true,
 	"CHECK_EVENT_NAMES": true,
 	"REGISTER_COMMANDS": true,
-	"FANCY_ERRORS": true
+	"FANCY_ERRORS": true,
+	"ENABLE_SHARDING": false
 }
