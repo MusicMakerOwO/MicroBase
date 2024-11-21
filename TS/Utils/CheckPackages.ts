@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { builtinModules as BUILT_IN_MODULES } from 'node:module';
 import { execSync } from 'node:child_process';
 
-const { CHECK_PACKAGES } = require('../config.json') as { CHECK_PACKAGES: boolean };
+const { CHECK_PACKAGES } = require('../../config.json') as { CHECK_PACKAGES: boolean };
 
 // This entire file is a wrapped in a self-executing function
 // This is only so we can use an early exit
@@ -36,12 +36,12 @@ const { CHECK_PACKAGES } = require('../config.json') as { CHECK_PACKAGES: boolea
 
 	// read the parent folder and all subfolders
 	// Files is now initialized with every file in the project
-	ReadFolder('../');
+	ReadFolder(`${__dirname}/../..`);
 
 	// import something from 'package'
 	// import 'package'
 	// require('package')
-	const IMPORT_REGEX = /import\s+(.*\s+from\s+)?['"](.*)['"]/gi;
+	const IMPORT_REGEX = /import\s+(?:.*\s+from\s+)?['"](.*)['"]/gi;
 	const REQUIRE_REGEX = /require\(['"](.*)['"]\)/gi;
 
 	const installedPackages = new Set<string>(); // Installed packages in the project
@@ -66,24 +66,41 @@ const { CHECK_PACKAGES } = require('../config.json') as { CHECK_PACKAGES: boolea
 	for (let i = 0; i < files.length; i++) {
 		const file = files[i];
 		const content = fs.readFileSync(file.path, 'utf-8');
-		let matches = content.matchAll(IMPORT_REGEX);
-		for (let match of matches) {
-			const cleaned = CleanPackageName(match[1]);
+		const noComments = content.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, ''); // Remove comments
+		const importMatches = Array.from( noComments.matchAll(IMPORT_REGEX) );
+		for (let i = 0; i < importMatches.length; i++) {
+			const match = importMatches[i][1];
+			const cleaned = CleanPackageName(match);
 			if (!cleaned) continue;
 			if (BUILT_IN_MODULES.includes(cleaned)) continue;
 			usedPackages.add(cleaned);
 		}
-		matches = content.matchAll(REQUIRE_REGEX);
-		for (let match of matches) {
-			const cleaned = CleanPackageName(match[1]);
+		// matches = content.matchAll(REQUIRE_REGEX);
+		const requireMatches = Array.from( noComments.matchAll(REQUIRE_REGEX) );
+		for (let i = 0; i < requireMatches.length; i++) {
+			const match = requireMatches[i][1];
+			const cleaned = CleanPackageName(match);
 			if (!cleaned) continue;
 			if (BUILT_IN_MODULES.includes(cleaned)) continue;
 			usedPackages.add(cleaned);
 		}
 	}
 
+	for (const pkg of usedPackages) {
+		// check node_modules in case it is a dependency
+		if (fs.existsSync(`node_modules/${pkg}`)) {
+			installedPackages.add(pkg);
+		}
+	}
+
+	for (const pkg of installedPackages) {
+		if (!usedPackages.has(pkg)) {
+			unusedPackages.push(pkg);
+		}
+	}
+
 	// Fetch install packages from package.json
-	const packageJson = require('../package.json') as { dependencies: Record<string, string>, devDependencies: Record<string, string> };
+	const packageJson = require('../../package.json') as { dependencies: Record<string, string>, devDependencies: Record<string, string> };
 	const dependencies = packageJson.dependencies || {};
 	const dev_dependencies = packageJson.devDependencies || {};
 	for (const dep in dependencies) {
