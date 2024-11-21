@@ -6,7 +6,11 @@ import Permission from '../Utils/Checks/Permissions';
 
 import Collector from '../Utils/Overrides/Collector';
 
+import ErrorParse from '../Utils/FindError';
+
 import { MicroClient, MicroInteraction } from '../typings';
+
+const { FANCY_ERRORS } = require('../../config.json') as { FANCY_ERRORS: boolean };
 
 // const collector = interaction.createCollector();
 // collector.on('collect', ...);
@@ -143,9 +147,30 @@ async function InteractionHandler(client: MicroClient, interaction: MicroInterac
 			await component.execute(interaction, client, type === 'commands' ? undefined : args);
 		}
 	} catch (error) {
+		client.logs.error(error);
+
+		if (FANCY_ERRORS) {
+			const errorData = ErrorParse(error);
+			if (errorData) {
+				const embed = {
+					color: 0xFF0000,
+					description: `
+	Command: \`${name}\`
+	Error: \`${errorData.message}\`
+	\`\`\`js\n${errorData.lines.join('\n')}\`\`\``,
+				}
+				await interaction.editReply({
+					content: '',
+					embeds: [embed],
+					components: [],
+					files: [],
+				}).catch(() => {});
+				return;
+			}
+		}
+
 		// dont save error messages lol
 		interaction.allowCache = false;
-		client.logs.error(error);
 		await interaction.deferReply({ ephemeral: true }).catch(() => {});
 		await interaction.editReply({
 			content: `There was an error while executing this command!\n\`\`\`${error}\`\`\``,

@@ -62,6 +62,12 @@ export interface MessageFile extends File {
 	execute: (message: Message, client: MicroClient, args?: string[]) => Promise<any>;
 }
 
+export interface ComponentError {
+	message: string;
+	stack: string[];
+	lines: string[];
+}
+
 export interface MicroClient extends Client {
 	config: Record<string, any>;
 	logs: typeof Log;
@@ -69,6 +75,7 @@ export interface MicroClient extends Client {
 	activeCollectors: Map<string, any>;
 	responseCache: Map<string, any>;
 	shards: ShardManager;
+	fileErrors: Map<string, ComponentError>;
 
 	// it's part of the builtin EventEmitter but TS doesn't like it lol
 	_events: Record<string, Function[]>;

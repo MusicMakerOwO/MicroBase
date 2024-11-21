@@ -8,7 +8,7 @@ if (shardID && isNaN(shardCount)) {
 
 // These 2 modules run on automatically so we don't care about the return value
 import './Utils/Overrides/Interactions';
-import './Utils/Overrides/InteractionEvent';
+import './Utils/Overrides/InteractionEvents';
 
 import './Utils/ProcessHandler';
 
@@ -18,8 +18,11 @@ import ShardManager from './Utils/Sharding/ShardManager';
 import ComponentLoader from './Utils/ComponentLoader';
 import EventLoader from './Utils/EventLoader';
 import Log from './Utils/Logs';
+import RegisterCommands from './Utils/RegisterCommands';
+import FileWatch from './Utils/FileWatch';
+import CheckIntents from './Utils/CheckIntents';
 
-import { MicroClient } from './typings';
+import { MicroClient, ComponentError } from './typings';
 import { Client } from 'discord.js';
 
 const client = new Client({
@@ -32,12 +35,13 @@ const client = new Client({
 }) as MicroClient;
 
 // type checking done in the index.js
-client.config = require('./config.json');
+client.config = require('../config.json');
 client.logs = Log;
 client.cooldowns = new Map<string, number>(); // guildID::userID -> timestamp
 client.activeCollectors = new Map<string, any>(); // messageID -> collector
 client.responseCache = new Map<string, any>(); // messageID -> response
 client.shards = new ShardManager(client, shardID, shardCount);// class will not initialize if shardID is not a number, reduces memory overhead
+client.fileErrors = new Map<string, ComponentError>(); // file -> error
 
 const modules = [
 	'context',
@@ -67,13 +71,13 @@ client.logs.debug(`Loaded ${ListenerCount - 1} events`);
 
 // This will only check intents loaded by the event loader
 // If they are defined below this point they will not be checked
-require('./utils/CheckIntents.js')(client);
+CheckIntents(client);
 
 if (isNaN(shardID)) {
 	// We only register if the bot isn't started by the shard manager
 	// The manger does a dynamic register but we don't have that luxury here
 	client.logs.info(`Started refreshing application (/) commands`);
-	require('./utils/RegisterCommands.js')(client);
+	RegisterCommands(client);
 	client.logs.info(`Successfully reloaded application (/) commands`);
 }
 
@@ -84,7 +88,7 @@ client.on('ready', function () {
 	client.logs.custom(`Logged in as ${client.user.tag}!`, 0x7946ff);
 
 	if (!process.send) {
-		require('./utils/FileWatch.js')(client); // listener for hot loading
+		FileWatch(client); // listener for hot loading
 	} else {
 		client.shards.broadcastReady();
 	}
