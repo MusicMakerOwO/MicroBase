@@ -10,5 +10,6 @@
 	"CHECK_PACKAGES": true,
 	"CHECK_INTENTS": true,
 	"CHECK_EVENT_NAMES": true,
-	"REGISTER_COMMANDS": true
+	"REGISTER_COMMANDS": true,
+	"FANCY_ERRORS": true
 }
