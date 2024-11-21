@@ -1,10 +1,8 @@
-// const https = require('node:https');
-// const config = require('../config.json');
-
 import https from 'node:https';
-const config = require('../config.json') as Record<string, any>;
+const config = require('../../config.json') as Record<string, any>;
 import { MicroClient } from '../typings';
 import { RESTPostAPIChatInputApplicationCommandsJSONBody } from 'discord.js';
+import Logs from './Logs';
 
 export default async function (client: MicroClient) {
 	if (!config.REGISTER_COMMANDS) return;
@@ -24,12 +22,12 @@ export default async function (client: MicroClient) {
 				commands.push(commandData);
 			}
 		} catch(error) {
-			console.error(`[REGISTER] Failed to register ${command.data.name}: ${error}`);
+			Logs.error(`[REGISTER] Failed to register ${command.data.name}: ${error}`);
 		}
 	}
 
 	if (devCommands.length > 0 && !config.DEV_GUILD_ID) {
-		console.warn(`You have dev commands but no DEV_GUILD_ID in config.json - These will not be registered!`);
+		Logs.warn(`You have dev commands but no DEV_GUILD_ID in config.json - These will not be registered!`);
 	}
 
 	// This is all that the Routes.applicationCommands() method does, but we don't need the extra dependency if it's literally just a string lmao
@@ -45,7 +43,7 @@ export default async function (client: MicroClient) {
 			await MakeRequest('PUT', devRoute, devCommands, config.TOKEN);
 		}
 	} catch (error) {
-		console.error(error);
+		Logs.error(error);
 	}
 }
 

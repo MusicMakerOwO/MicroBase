@@ -3,7 +3,7 @@ import { Events } from 'discord.js';
 import ReadFolder from './ReadFolder.js';
 import Logs from './Logs.js';
 import { MicroClient, EventFile } from '../typings';
-const { CHECK_EVENT_NAMES } = require('../config.json') as { CHECK_EVENT_NAMES: boolean };
+const { CHECK_EVENT_NAMES } = require('../../config.json') as { CHECK_EVENT_NAMES: boolean };
 
 const IGNORED_EVENTS = [
 	'hotReload',
@@ -16,7 +16,7 @@ export default function (client: MicroClient) {
 		return;
 	}
 
-	const files = ReadFolder('events');
+	const files = ReadFolder(`${__dirname}/../events/`);
 	for (const { path, data } of files as Array<{ path: string, data: EventFile }>) {
 		try {
 			if (!data.name) throw `Event is missing a name!`;
@@ -37,7 +37,9 @@ export default function (client: MicroClient) {
 			
 			if (typeof data.execute !== 'function') throw `Event is missing an execute function!`;
 
-			(data.once ? client.once : client.on)(data.name, data.execute.bind(null, client));
+			const callback = data.execute.bind(null, client);
+			if (data.once) client.once(data.name, callback);
+			else client.on(data.name, callback);
 		} catch (error) {
 			Logs.error(`Failed to load event ${path}`);
 			Logs.error(error);

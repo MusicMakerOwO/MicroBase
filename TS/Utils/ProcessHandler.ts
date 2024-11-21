@@ -1,5 +1,5 @@
 import Log from './Logs';
-const { PROCESS_HANDLER } = require('../config.json') as { PROCESS_HANDLER: boolean };
+const { PROCESS_HANDLER } = require('../../config.json') as { PROCESS_HANDLER: boolean };
 
 ( () => {
 	if (!PROCESS_HANDLER) return;

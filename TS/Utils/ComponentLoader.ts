@@ -18,7 +18,7 @@ export default function (client: MicroClient, folder: 'commands' | 'context' | '
 		throw new Error(`No "${folder}" folder found`);
 	}
 
-	const files = ReadFolder(folder);
+	const files = ReadFolder(`${__dirname}/../${folder}`);
 	for (let { path: filePath, data } of files as Array<{ path: string, data: CommandFile | ComponentFile | MessageFile }>) {
 		try {
 			if (!data.execute) throw `No execute function found`;
