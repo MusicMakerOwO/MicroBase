@@ -7,7 +7,7 @@ const MIN_SHARDS = 1;
 const MAX_SHARDS = 16;
 const GUILDS_PER_SHARD = 2000;
 
-const MAX_START_TIME = 10_000; // 30 seconds
+const MAX_START_TIME = 30_000; // 30 seconds
 
 type CommandPayload = RESTPostAPIChatInputApplicationCommandsJSONBody;
 
