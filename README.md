@@ -23,9 +23,11 @@ Discord bots just got easier
 	- [Sharding Configuration](#sharding-configuration)
 	- [Disabling Sharding](#disabling-sharding)
  - [Advanced Components](#advanced-components)
+	- [Aliases](#aliases)
 	- [Component Args](#button-args)
 	- [Component Restrictions](#component-restrictions)
 	- [Linking Components](#linking-components)
+	- [Caching](#caching)
  - [Contributing](#contributing)
  - [License](#license)
  
@@ -203,6 +205,8 @@ This is a common issue with Discord and not necessarily Micro Base. Discord is a
 ## Sharding
 After 2,500 servers, Discord forces you to start sharding your bot. Most developers see sharding as being pretty complex, and while yes it is, it's also a lot easier than people make it out to be. The big issues only come when you have to 1) transfer data across shards (there are ways around that) and 2) when you have to split your shards across multiple computers. Micro Base makes things manageable but it's not a cure-all, everything is still done locally so don't expect to transfer your 100,000 server bot quite yet!
 
+The built-in `ShardManager` in Discord.JS is frankly kind of limited. While it is definitely cool condensing all your code into just a couple lines and letting them do the hard lifting, it does have it's drawbacks. Logs for example don't get emitted in the usual sense, you don't have control over auto-restarts, and you can't send data easily. Micro Base has a custom built `ShardManager` that gives you all of this and more. While you can't control fine tuning like RAM and I/O usage it is a much needed step in the right direction.
+
 ### Sharding Explained
 I don't actually think people quite understand how sharding works. We all understand the code but what *actually* happens is still kind of a mystical. In layman's terms, sharding is just splitting your bot into multiple smaller bots. Each shard is a separate instance of your bot, they all run the same code but they completely separate. "This sounds stupid! Why would I want that?", I can hear some of you saying.
 
@@ -214,11 +218,51 @@ On the API side of Discord bots, each shard is it's own bot instance. This is an
 Micro Base shards by default, this is to ensure that your bot is running at peak performance. However, this can be disabled in the [config.json](#configuration) if you are not interested in sharding. Micro Base shards by default with the formula `Math.min(8, Math.ceil(client.guilds.cache.size / 1000))`. This is a pretty standard formula that most bots use, it's not perfect but it's a good starting point. This formula will give you 1 shard for every 1,000 servers, but no more than 8 shards. This is to prevent the bot from running too many shards and causing performance issues. You can change this formula in the [config.json](#configuration) if you want to, but it is not recommended.
 
 ### Sharding Configuration
+Up at the top of the [Shard Manager](index.js) you will see a couple of variables: `MIN_SHARDS`, `MAX_SHARDS`, `GUILDS_PER_SHARD`, and `MAX_START_TIME`. These should all be self explanatory but I will list their usages regardless.
 
+| Variable | Description | Default |
+| --- | --- | --- |
+| MIN_SHARDS | The minimum number of shards the manager will start up, regardless of the server count | `1` |
+| MAX_SHARDS | The maximum shard count, if you exceed this it will alert you, you cannot start the bot until this is resolved | `16` |
+| GUILDS_PER_SHARD | The number of guilds per shard, this is used to calculate the shard count automatically | `2,000` |
+| MAX_START_TIME | The maximum time in ms for a shard to emit a `ready` event, if it takes longer then it will assume dead | `30,000` |
 
 
 ## Advanced Components
-This is where Micro Base really shines from the rest of the pack, using handlers unlocks some performance gains that you can't really find anywhere else. Component args, linking, restrictions, and caching are only a few ways that help bring the most out of your production code.
+This is where Micro Base really shines from the rest of the pack, using handlers unlocks some performance gains that you can't really find anywhere else. Component args, linking, restrictions, and caching are only a few ways that help bring the most out of your production code. The entire goal of this is to reuse as much code as possible, this is not only efficient for the compiler but also saves you time debugging.
+
+### Aliases
+Most wouldn't count this as a performance gain but in Micro it is. Aliases are a way to reuse the same component in multiple places, Micro Base takes this a step further in that aliases can be used not only in prefix but also slash commands. Why is this useful? Say you have a leveling system, you might want to add `/rank` and `/level` as aliases to the same command, however you would have to duplicate the code in some compacity. With aliases you can simply duplicate the component data with a new name.
+> Caveats: Aliases are only supported in prefix and slash commands. **They count as a separate commands** so be mindful with bots that have a lot of commands. **Aliases are full duplicates internally**, they are only here to make things easier for you.
+
+<br/>
+
+**Prefix**
+```js
+module.exports = {
+	name: 'rank',
+	description: 'Shows your rank',
+	aliases: ['level', 'xp'], //optional
+	async execute(message, client, args) {
+		// your code here
+	}
+};
+```
+
+**Slash**
+```js
+module.exports = {
+	aliases: ['level', 'xp'], //optional
+	data: new SlashCommandBuilder()
+		.setName('rank')
+		.setDescription('Shows your rank')
+		.addStringOption(option => option.setName('user').setDescription('The user to get the rank of')),
+	async execute(interaction, client) {
+		// your code here
+	}
+};
+```
+> HINT: This will register 3 commands: `/rank`, `/level`, and `/xp`. Be mindful of your command count!
 
 ### Component Args
 The roots of this come from way back before Micro Base was even conceptualized. The idea is simple, adding state to your buttons so you don't have to, this will keep a small amount of data even after restarting, no need for cache. In the older days before Micro this was done with many nested switch statements.
@@ -280,11 +324,84 @@ module.exports = {
 With a system like this you can pass data around the bot without any caching or database, as long as the button exists so does your data. This same system applies to all components, not just buttons, so you can run a command that spawns a modal, that sends a select menu, and then the buttons *still* remember the data. This is a powerful system that can be used in many ways, but it is not without it's downsides. This system is not perfect and can be a little confusing at first, but once you get the hang of it you will never want to go back.
 
 ### Component Restrictions
+Micro Base has a ton of built-in restrictions you can apply to components. Everything from required permissions to cooldowns to server owner. It is worth noting however that *these are all single-guilded. This means that if you want users to set their own roles on a dashboard you have to do the check logic yourself.* If that doesn't apply to you then all of these will work perfectly for you!
+
+| Property | Description | Type | Default |
+| --- | --- | --- | --- |
+| dev | This command will not be registered to any other servers (slash commands only) | Boolean | `false` |
+| owner | Only the server owner can use this command | Boolean | `false` |
+| cooldown | The cooldown in seconds, using it again before the time has passed will deny access | Number | `0` |
+| guilds | An array of guild IDs that can use this command | Array | `[]` |
+| roles | An array of role IDs that can use this command | Array | `[]` |
+| channels | An array of channel IDs that can use this command | Array | `[]` |
+| users | An array of user IDs that can use this command | Array | `[]` |
+| userPerms | An array of permissions that the user must have to use this command | Array | `[]` |
+| botPerms | An array of permissions that the bot must have (current server) to use this command | Array | `[]` |
+
+```js
+module.exports = {
+	botPerms: ['BanMembers'], // bot must have ban members permission
+	userPerms: ['BanMembers'], // user must also have it
+	data: new SlashCommandBuilder()
+		.setName('ban')
+		.setDescription('Bans a user')
+		.addUserOption(option => option.setName('user').setDescription('The user to ban').setRequired(true)),
+	async execute(interaction) {
+		// ban the user, no permission checks needed
+	}
+};
+```
+
+Also under the same category there are a couple of extra options that don't restrict access but simply make life easier
+| Property | Description | Type | Default |
+| --- | --- | --- | --- |
+| defer | Defer the reply automatically, the value will set it as ephemeral or not, no value will make it not defer | Boolean \| Null | `null` |
+| cache | Cache the response, this is only useful for static components such as `/help` | Boolean | `false` |
+| alias | Just another `aliases` field with a different name, they do the same thing, see [Aliases](#aliases) for more info | Array | `[]` |
 
 ### Linking Components
 > HINT:<br />
 > This section plays perfectly with [Component Args](#component-args), if you are not familiar with that section you may want to read it first. This takes the ideas from there and goes another step further.
 
+Did you know you can make a command run a button automatically? This is not a feature specific to Micro Base but the first that I have seen use it. This can technically be done in any base but Micro capitalizes on it. There are a couple of caveats to note however. When you transfer an interaction it does not change types - If it started as a command and transfer to a button it is still a command interaction. This can be a little confusing at first but it opens the doors to a lot of stuff.
+
+```js
+// Button
+module.exports = {
+	customID: 'poke',
+	async execute(interaction) {
+		await interaction.reply('Ouch!');
+	}
+}
+
+// Command
+module.exports = {
+	data: new SlashCommandBuilder()
+		.setName('poke')
+		.setDescription('Poke the bot'),
+	async execute(interaction, client) {
+		const button = client.buttons.get('poke');
+		await button.execute(interaction, client); // 'Ouch!'
+	}
+}
+```
+
+### Caching
+This is a first-ever for Discord bot bases - Response caching! *(seriously why has no one thought of this?)*
+This entire feature, like [Hot Reload](#hot-reload), was inspired by [NextJS](https://nextjs.org/). The idea is simple, cache the response of a command so you don't have to run the same code over and over again. This is especially useful for commands that don't change often, like `/help`. The execution of this is actually very simple, we will save the last response emitted and reuse it if the command gets ran again. This is a huge performance gain for bots that have a lot of commands that don't change often. **However this is only for static commands so if you reply on user input, time of day, or a guild setting this will cause more harm than good.**
+```js
+module.exports = {
+	cache: true, // The first time you run this it will take 5 seconds, the second time is instant
+	data: new SlashCommandBuilder()
+		.setName('slow-command')
+		.setDescription('This is very slooooowwww'),
+	async execute(interaction) {
+		await interaction.deferReply();
+		await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5 seconds
+		await interaction.editReply('Done!');
+	}
+}
+```
 
 ## Contributing
 
