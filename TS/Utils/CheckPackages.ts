@@ -113,7 +113,10 @@ const { CHECK_PACKAGES } = require('../../config.json') as { CHECK_PACKAGES: boo
 	// Check if the package is installed
 	for (const pkg of usedPackages) {
 		if (!installedPackages.has(pkg)) {
-			missingPackages.push(pkg);
+			// it could be a dependency of something else
+			if (!fs.existsSync(`${__dirname}/../../node_modules/${pkg}`)) {
+				missingPackages.push(pkg);
+			}
 		}
 	}
 
