@@ -10,7 +10,7 @@ var _Logs = require('./Logs'); var _Logs2 = _interopRequireDefault(_Logs);
 const files = [];
 
 exports. default = function (path, depth = 3) {
-	if (!path.startsWith('/')) throw new Error(`Path must be absolute - Received ${path}`);
+	if (!path.startsWith('/') && !path.startsWith('C:/')) throw new Error(`Path must be absolute - Received ${path}`);
 	if (path.endsWith('/')) path = path.slice(0, -1);
 	files.length = 0;
 	ReadFolder(path, depth);

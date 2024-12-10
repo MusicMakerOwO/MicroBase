@@ -9,7 +9,7 @@ interface File {
 const files: File[] = [];
 
 export default function (path: string, depth = 3) {
-	if (!path.startsWith('/')) throw new Error(`Path must be absolute - Received ${path}`);
+	if (!path.startsWith('/') && !path.startsWith('C:/')) throw new Error(`Path must be absolute - Received ${path}`);
 	if (path.endsWith('/')) path = path.slice(0, -1);
 	files.length = 0;
 	ReadFolder(path, depth);
