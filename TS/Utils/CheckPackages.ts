@@ -42,7 +42,7 @@ const { CHECK_PACKAGES } = require('../../config.json') as { CHECK_PACKAGES: boo
 	// import 'package'
 	// require('package')
 	const IMPORT_REGEX = /import\s+(?:.*\s+from\s+)?['"](.*)['"]/gi;
-	const REQUIRE_REGEX = /require\(['"](.*)['"]\)/gi;
+	const REQUIRE_REGEX = /require\(['"]([^\)]+)['"]\)/gi;
 
 	const installedPackages = new Set<string>(); // Installed packages in the project
 	const usedPackages = new Set<string>(); // Used packages in the code
