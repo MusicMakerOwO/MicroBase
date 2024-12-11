@@ -41,7 +41,7 @@ Discord bot are in an ever changing landscape of standards and features, no two 
 Check out some other great bases!
  - [Synapse](https://github.com/mar-codes/Synapse-Base)
  - [Mid Base](https://github.com/s3dking/Mid-Base)
- - [Disco Base](https://github.com/ethical-programmer/discobase)
+ - [Disco Base](https://github.com/ethical-programmer/create-discobase)
 
 ## Installation
 Micro Base is a standalone project meaning that you control every aspect of it. There are no dependencies to install besides Discord.js, everything else is on you. To get started, simply clone the repository and run `npm install` to get started.
