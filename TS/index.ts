@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import ChildProcess from 'node:child_process'; // shards are spawned as child processes
 import EventListener from 'node:events';
 
-const MIN_SHARDS = 1;
+const MIN_SHARDS = 2;
 const MAX_SHARDS = 16;
 const GUILDS_PER_SHARD = 2000;
 
@@ -269,7 +269,7 @@ function CreateShard(shardID: number, shardCount = shards.size) {
 		return;
 	}
 
-	const shard = ChildProcess.fork('./app.js', [String(shardID), String(shardCount)], {
+	const shard = ChildProcess.fork('./JS/app.js', [String(shardID), String(shardCount)], {
 		// JSON serialization allows for transmission of primitive types but not much else
 		// Things like numbers, strings, booleans, arrays, and objects are fine
 		// But if you need more complex data, like functions, you will need to convert it to a primitive
@@ -278,12 +278,15 @@ function CreateShard(shardID: number, shardCount = shards.size) {
 		silent: true, // logs handled by master process
 		stdio: 'pipe', // pipe stdout and stderr, doesn't go straight to console so we can intercept it and log it
 	});
+	
+	BindListeners(shard, shardID);
+
 	Object.defineProperty(shard, 'shutdown', {
 		value: () => {
 			if (shard.connected) shard.send({ type: MessageTypes.SHUTDOWN });
 		}
 	});
-	BindListeners(shard, shardID);
+
 	shards.set(shardID, shard);
 	shardCrashes.set(shardID, Date.now());
 	shardKillTimeouts.set(shardID, setTimeout(() => {
@@ -377,9 +380,7 @@ function AppendLogs(type: string, shardID: number, message: string, silent = fal
 
 function BindListeners(child: ChildProcess.ChildProcess, shardID: number) {
 	child.on('message', ProcessIPCMessage);
-	// child.stdout.on('data', AppendLogs.bind(null, LOG_TYPES.INFO, shardID));
-	// child.stderr.on('data', AppendLogs.bind(null, LOG_TYPES.ERROR, shardID));
-	child.on('message', ProcessIPCMessage);
+	child.stdout?.on('data', AppendLogs.bind(null, LOG_TYPES.INFO, shardID));
 	child.on('error', AppendLogs.bind(null, LOG_TYPES.ERROR, shardID));
 	child.on('exit', code => {
 		// Sometimes code is null so default to 1 meaning error
@@ -665,6 +666,6 @@ hotReloadEvents.on('hotReload', (reloadData) => {
 
 	console.warn(`[~] Spawning ${shardCount} shards...`);
 	for (let i = 0; i < shardCount; i++) {
-		CreateShard(i, shardCount);
+		CreateShard(i, shardCount - 1);
 	}
 })();

@@ -10,7 +10,7 @@ var _nodefs = require('node:fs'); var _nodefs2 = _interopRequireDefault(_nodefs)
 var _nodechild_process = require('node:child_process'); var _nodechild_process2 = _interopRequireDefault(_nodechild_process); // shards are spawned as child processes
 var _nodeevents = require('node:events'); var _nodeevents2 = _interopRequireDefault(_nodeevents);
 
-const MIN_SHARDS = 1;
+const MIN_SHARDS = 2;
 const MAX_SHARDS = 16;
 const GUILDS_PER_SHARD = 2000;
 
@@ -264,7 +264,7 @@ function CreateShard(shardID, shardCount = shards.size) {
 		return;
 	}
 
-	const shard = _nodechild_process2.default.fork('./app.js', [String(shardID), String(shardCount)], {
+	const shard = _nodechild_process2.default.fork('./JS/app.js', [String(shardID), String(shardCount)], {
 		// JSON serialization allows for transmission of primitive types but not much else
 		// Things like numbers, strings, booleans, arrays, and objects are fine
 		// But if you need more complex data, like functions, you will need to convert it to a primitive
@@ -273,12 +273,15 @@ function CreateShard(shardID, shardCount = shards.size) {
 		silent: true, // logs handled by master process
 		stdio: 'pipe', // pipe stdout and stderr, doesn't go straight to console so we can intercept it and log it
 	});
+	
+	BindListeners(shard, shardID);
+
 	Object.defineProperty(shard, 'shutdown', {
 		value: () => {
 			if (shard.connected) shard.send({ type: _MessageTypesjs2.default.SHUTDOWN });
 		}
 	});
-	BindListeners(shard, shardID);
+
 	shards.set(shardID, shard);
 	shardCrashes.set(shardID, Date.now());
 	shardKillTimeouts.set(shardID, setTimeout(() => {
@@ -372,9 +375,7 @@ function AppendLogs(type, shardID, message, silent = false) {
 
 function BindListeners(child, shardID) {
 	child.on('message', ProcessIPCMessage);
-	// child.stdout.on('data', AppendLogs.bind(null, LOG_TYPES.INFO, shardID));
-	// child.stderr.on('data', AppendLogs.bind(null, LOG_TYPES.ERROR, shardID));
-	child.on('message', ProcessIPCMessage);
+	_optionalChain([child, 'access', _ => _.stdout, 'optionalAccess', _2 => _2.on, 'call', _3 => _3('data', AppendLogs.bind(null, LOG_TYPES.INFO, shardID))]);
 	child.on('error', AppendLogs.bind(null, LOG_TYPES.ERROR, shardID));
 	child.on('exit', code => {
 		// Sometimes code is null so default to 1 meaning error
@@ -445,7 +446,7 @@ async function Shutdown() {
 			shards.delete(id);
 			continue;
 		}
-		if (!_optionalChain([shard, 'optionalAccess', _ => _.connected])) continue;
+		if (!_optionalChain([shard, 'optionalAccess', _4 => _4.connected])) continue;
 		shard.shutdown();
 	}
 
@@ -462,7 +463,7 @@ async function Shutdown() {
 	if (shards.size > 0) {
 		for (const child of shards.values()) {
 			if (child === null) continue;
-			_optionalChain([child, 'optionalAccess', _2 => _2.kill, 'call', _3 => _3()]);
+			_optionalChain([child, 'optionalAccess', _5 => _5.kill, 'call', _6 => _6()]);
 		}
 		console.warn('[~] Forced shutdown of all shards');
 	}
@@ -656,6 +657,6 @@ hotReloadEvents.on('hotReload', (reloadData) => {
 
 	console.warn(`[~] Spawning ${shardCount} shards...`);
 	for (let i = 0; i < shardCount; i++) {
-		CreateShard(i, shardCount);
+		CreateShard(i, shardCount - 1);
 	}
 })();
