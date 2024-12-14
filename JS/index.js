@@ -10,7 +10,7 @@ var _nodefs = require('node:fs'); var _nodefs2 = _interopRequireDefault(_nodefs)
 var _nodechild_process = require('node:child_process'); var _nodechild_process2 = _interopRequireDefault(_nodechild_process); // shards are spawned as child processes
 var _nodeevents = require('node:events'); var _nodeevents2 = _interopRequireDefault(_nodeevents);
 
-const MIN_SHARDS = 2;
+const MIN_SHARDS = 1;
 const MAX_SHARDS = 16;
 const GUILDS_PER_SHARD = 2000;
 

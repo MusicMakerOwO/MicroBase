@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import ChildProcess from 'node:child_process'; // shards are spawned as child processes
 import EventListener from 'node:events';
 
-const MIN_SHARDS = 2;
+const MIN_SHARDS = 1;
 const MAX_SHARDS = 16;
 const GUILDS_PER_SHARD = 2000;
 
