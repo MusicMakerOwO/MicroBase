@@ -9,6 +9,8 @@ const CheckIntents = require('./Utils/CheckIntents');
 
 const { Client } = require('discord.js');
 const { existsSync } = require('node:fs');
+const ReadFolder = require('./Utils/ReadFolder');
+const Debounce = require('./Utils/Debounce');
 
 const client = new Client({
 	intents: [
@@ -79,7 +81,7 @@ CheckIntents(client);
 
 RegisterCommands(client);
 
-function HotReload(cache, componentFolder, filePath, type) {
+function HotReload(cache, componentFolder, filePath, type = 0) {
 	if (type !== 0) return; // 0 = file, 1 = directory, 2 = symlink
 
 	const isEvent = cache === null;
@@ -89,8 +91,18 @@ function HotReload(cache, componentFolder, filePath, type) {
 	if (isEvent) {
 		client.removeAllListeners();
 		EventLoader(client);
+		let ListenerCount = 0;
+		for (const listeners of Object.values(client._events)) {
+			ListenerCount += listeners.length;
+		}
 		client.logs.debug(`Loaded ${ListenerCount - 1} events`);
 		return;
+	}
+
+	const files = ReadFolder(`${__dirname}/${componentFolder}`);
+	console.log(files);
+	for (let i = 0; i < files.length; i++) {
+		delete require.cache[ require.resolve(files[i]) ];
 	}
 
 	cache.clear();
@@ -106,7 +118,7 @@ client.on('ready', function () {
 
 	for (const [path, cache] of Object.entries(ComponentFolders)) {
 		const watcher = new FileWatch(path, true);
-		const callback = HotReload.bind(null, cache, path);
+		const callback = Debounce(HotReload.bind(null, cache, path), 1_000);
 		watcher.onAdd = callback;
 		watcher.onRemove = callback;
 		watcher.onChange = callback;
