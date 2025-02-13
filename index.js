@@ -8,7 +8,7 @@ const FileWatch = require('./Utils/FileWatcher');
 const CheckIntents = require('./Utils/CheckIntents');
 
 const { Client } = require('discord.js');
-const { existsSync } = require('node:fs');
+const { existsSync, readFileSync, writeFileSync } = require('node:fs');
 const ReadFolder = require('./Utils/ReadFolder');
 const Debounce = require('./Utils/Debounce');
 
@@ -38,7 +38,7 @@ client.modals = new Map();
 client.messages = new Map();
 
 // file path : [component type, component cache]
-const ComponentFolders = {
+const COMPONENT_FOLDERS = {
 	'./Commands': client.commands,
 	'./Buttons' : client.buttons,
 	'./Menus'   : client.menus,
@@ -49,7 +49,34 @@ const ComponentFolders = {
 	'./Events'  : null // handled separately
 }
 
-for (const [path, cache] of Object.entries(ComponentFolders)) {
+const PRESET_FILES = {
+	'./Commands': './Presets/Command',
+	'./Buttons' : './Presets/Button',
+	'./Menus'   : './Presets/Menu',
+	'./Modals'  : './Presets/Modal',
+	'./Messages': './Presets/Message',
+	'./Context' : './Presets/Context',
+	'./Events'  : './Presets/Event'
+}
+
+for (const [componentFolder, presetFile] of Object.entries(PRESET_FILES)) {
+	if (!existsSync(presetFile)) {
+		client.logs.error(`The preset "${presetFile}" file does not exist - Check the relative path!`);
+		PRESET_FILES[componentFolder] = null;
+		continue;
+	}
+
+	if (!(componentFolder in COMPONENT_FOLDERS)) {
+		client.logs.error(`The folder "${componentFolder}" does not exist in the COMPONENT_FOLDERS lookup`);
+		PRESET_FILES[componentFolder] = null;
+		continue;
+	}
+
+	const data = readFileSync(presetFile, 'utf-8');
+	if (data.length > 0) PRESET_FILES[componentFolder] = data;
+}
+
+for (const [path, cache] of Object.entries(COMPONENT_FOLDERS)) {
 	if (cache === null) {
 		EventLoader(client, path);
 		let ListenerCount = 0;
@@ -67,7 +94,8 @@ for (const [path, cache] of Object.entries(ComponentFolders)) {
 
 	if (!existsSync(path)) {
 		client.logs.error(`The '${path.split('/')[1]}' folder does not exist - Check the relative path!`);
-		delete ComponentFolders[path]; // remove it from the lookup so it doesn't get checked later
+		delete COMPONENT_FOLDERS[path]; // remove it from the lookup so it doesn't get checked later
+		delete PRESET_FILES[path];
 		continue;
 	}
 	
@@ -100,7 +128,6 @@ function HotReload(cache, componentFolder, filePath, type = 0) {
 	}
 
 	const files = ReadFolder(`${__dirname}/${componentFolder}`);
-	console.log(files);
 	for (let i = 0; i < files.length; i++) {
 		delete require.cache[ require.resolve(files[i]) ];
 	}
@@ -111,15 +138,26 @@ function HotReload(cache, componentFolder, filePath, type = 0) {
 	client.logs.debug(`Loaded ${cache.size} ${componentFolder.split('/')[1]}`);
 }
 
+function PresetFile(cache, componentFolder, callback, filePath) {
+	const presetData = PRESET_FILES[componentFolder];
+	if (!presetData) return;
+
+	// write into the new file
+	writeFileSync(filePath, presetData);
+
+	// reload the cache
+	callback(filePath);
+}
+
 client.logs.info(`Logging in...`);
 client.login(client.config.TOKEN);
 client.on('ready', function () {
 	client.logs.custom(`Logged in as ${client.user.tag}!`, 0x7946ff);
 
-	for (const [path, cache] of Object.entries(ComponentFolders)) {
+	for (const [path, cache] of Object.entries(COMPONENT_FOLDERS)) {
 		const watcher = new FileWatch(path, true);
 		const callback = Debounce(HotReload.bind(null, cache, path), 1_000);
-		watcher.onAdd = callback;
+		watcher.onAdd = PresetFile.bind(null, cache, path, callback);
 		watcher.onRemove = callback;
 		watcher.onChange = callback;
 	}
