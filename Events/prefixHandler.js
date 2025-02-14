@@ -2,12 +2,13 @@ const CheckCooldown = require('../Utils/Checks/Cooldown');
 const GuildOwner = require('../Utils/Checks/GuildOwner');
 const IDAccess = require('../Utils/Checks/IDAccess');
 const RoleAccess = require('../Utils/Checks/RoleAccess');
-const Permission = require('../Utils/Checks/Permissions.Js');
+const Permission = require('../Utils/Checks/Permissions');
+
+const { PREFIX, FANCY_ERRORS } = require('../config.json');
 
 module.exports = {
 	name: 'messageCreate',
 	execute: async function(client, message) {
-		const { PREFIX } = client.config;
 		
 		if (message.author.bot) return;
 		if (!message.content?.startsWith(PREFIX)) return;
@@ -68,7 +69,22 @@ module.exports = {
 			await command.execute(message, client, args);
 		} catch (error) {
 			client.logs.error(error);
-			await message.reply(`There was an error while executing this command!\n\`\`\`${error}\`\`\``).catch(() => { });
+
+			if (!FANCY_ERRORS) {
+				await message.reply(`There was an error while executing this command!\n\`\`\`${error}\`\`\``).catch(() => { });
+			} else {
+				const errorData = ErrorParse(error);
+				if (errorData) {
+					const embed = {
+						color: 0xff0000,
+						description: `
+	Command: \`${name}\`
+	Error: \`${errorData.message}\`
+	\`\`\`\n${errorData.lines.join('\n')}\`\`\``,
+					};
+					await message.reply({ embeds: [embed] }).catch(() => {});
+				}
+			}
 		}
 	}
 };
