@@ -9,6 +9,8 @@ const { InteractionContextType } = require('discord.js');
 const PUBLIC_ROUTE = `https://discord.com/api/v10/applications/${config.APP_ID}/commands`;
 const DEV_ROUTE = `https://discord.com/api/v10/applications/${config.APP_ID}/guilds/${config.DEV_GUILD_ID}/commands`;
 
+const DEFAULT_COMMAND_ACCESS = [ InteractionContextType.Guild ];
+
 async function RegisterCommands(client) {
 
 	Logs.info(`Started refreshing application (/) commands`);
@@ -22,6 +24,7 @@ async function RegisterCommands(client) {
 			if (!commandData) throw `No command.data found - Did you forget to save the file?`;
 			if (commandNames.includes(commandData.name)) continue;
 			commandNames.push(commandData.name);
+			commandData.contexts ??= DEFAULT_COMMAND_ACCESS;
 			if (command.dev) {
 				devCommands.push(commandData);
 			} else {
@@ -102,7 +105,7 @@ function SimplifyCommand(command) {
 		description: command.description ?? '',
 		type: command.type ?? 1,
 		options: command.options ?? [],
-		contexts: command.contexts ?? [],
+		contexts: command.contexts ?? DEFAULT_COMMAND_ACCESS,
 		nsfw: command.nsfw ?? false
 	}
 }
