@@ -75,8 +75,6 @@ module.exports = function ComponentLoader(folder, cache) {
 				data.aliases = [];
 			}
 
-			if (data.cache && typeof data.cache !== 'boolean') throw 'Invalid cache type - Must be a boolean';
-
 			const type = PredictComponentType(data);
 
 			switch (type) {
