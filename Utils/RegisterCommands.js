@@ -1,14 +1,15 @@
 const config = require('../config.json');
 const https = require('https');
 const Logs = require('./Logs');
+const CRC32 = require('./CRC32');
+const { InteractionContextType } = require('discord.js');
 
 // This is all that the Routes.applicationCommands() method does, but we don't need the extra dependency if it's literally just a string lmao
 // https://discord.com/developers/docs/tutorials/upgrading-to-application-commands#registering-commands
 const PUBLIC_ROUTE = `https://discord.com/api/v10/applications/${config.APP_ID}/commands`;
 const DEV_ROUTE = `https://discord.com/api/v10/applications/${config.APP_ID}/guilds/${config.DEV_GUILD_ID}/commands`;
 
-module.exports = async function (client) {
-	if (!config.REGISTER_COMMANDS) return;
+async function RegisterCommands(client) {
 
 	Logs.info(`Started refreshing application (/) commands`);
 	
@@ -81,3 +82,116 @@ async function MakeRequest(method, route, body) {
 		req.end();
 	});
 };
+
+function StringifyFunction(key, value) {
+	switch (typeof value) {
+		case 'function':
+			return null;
+		case 'bigint':
+			return Number(value); // introduces precision issues, you should consider that
+		case 'undefined':
+		case 'object':
+			return value === null ? 'null' : value;
+	}
+	return value;
+}
+
+function SimplifyCommand(command) {
+	return {
+		name: command.name ?? '',
+		description: command.description ?? '',
+		type: command.type ?? 1,
+		options: command.options ?? [],
+		contexts: command.contexts ?? [],
+		nsfw: command.nsfw ?? false
+	}
+}
+
+function TokenizeCommand(command) {
+	const commandString = JSON.stringify(command, StringifyFunction);
+	return CRC32(commandString);
+}
+
+function CheckCommandEquality(oldCommand, newCommand) {
+	const oldToken = TokenizeCommand(oldCommand);
+	const newToken = TokenizeCommand(newCommand);
+	return oldToken === newToken;
+}
+
+function NeedsRegister(oldCommands, newCommands) {
+	if (Object.keys(oldCommands).length !== Object.keys(newCommands).length) {
+		return true;
+	}
+	for (const [name, command] of Object.entries(oldCommands)) {
+		if (!newCommands[name]) {
+			return true;
+		}
+		if (!CheckCommandEquality(command, newCommands[name])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+let lastRegister = 0;
+module.exports = async function DynamicRegister(client, force = false) {
+
+	if (!config.REGISTER_COMMANDS) {
+		Logs.warn('Command registration is disabled in config.json');
+		return;
+	}
+	
+	if (force) {
+		await RegisterCommands(client);
+		return;
+	}
+
+	if (Date.now() - lastRegister < 1000 * 10) return; // 10 second cooldown
+	lastRegister = Date.now();
+
+	Logs.info('Checking slash commands, this may take a second...');
+	const oldCommands = {};
+	const newCommands = {};
+
+	const oldDevCommands = {};
+	const newDevCommands = {};
+
+	for (const command of [...client.commands.values(), ...client.context.values()]) {
+		if (typeof command?.data !== 'object') {
+			Logs.error(`Command ${command.name} has no data object`);
+			continue;
+		}
+
+		const commandData = SimplifyCommand(command.data);
+		if (command.dev) {
+			newDevCommands[commandData.name] = commandData;
+		} else {
+			newCommands[commandData.name] = commandData;
+		}
+	}
+
+	const registeredCommands = await MakeRequest('GET', PUBLIC_ROUTE, null);
+	for (const APICommand of registeredCommands) {
+		const commandData = SimplifyCommand(APICommand);
+		oldCommands[commandData.name] = commandData;
+	}
+
+	let needToRegister = NeedsRegister(oldCommands, newCommands);
+	if (config.DEV_GUILD_ID && !needToRegister) {
+		// additional API request to check guild commands
+
+		const registeredDevCommands = await MakeRequest('GET', DEV_ROUTE, null);
+		for (const APICommand of registeredDevCommands) {
+			const commandData = SimplifyCommand(APICommand);
+			oldDevCommands[commandData.name] = commandData;
+		}
+
+		needToRegister = NeedsRegister(oldDevCommands, newDevCommands);
+	}
+
+	if (needToRegister) {
+		await RegisterCommands(client);
+	} else {
+		Logs.info('No changes detected in commands');
+	}
+}
