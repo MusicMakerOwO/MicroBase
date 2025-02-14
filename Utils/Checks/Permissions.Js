@@ -8,7 +8,8 @@ module.exports = function CheckPermissions(client, permissionsArray, member) {
 
 	const missingPermissions = [];
 	if (permissionsArray.length === 0) return;
-	for (const permission of permissionsArray) {
+	for (let i = 0; i < permissionsArray.length; i++) {
+		const permission = permissionsArray[i];
 		if (member.permissions.has(Permissions[permission])) continue;
 		missingPermissions.push(permission);
 	}

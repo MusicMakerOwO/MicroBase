@@ -18,7 +18,8 @@ module.exports = function (client, folderPath) {
 
 	const filePaths = ReadFolder(`${__dirname}/../${folderPath}`);
 
-	for (const path of filePaths) {
+	for (let i = 0; i < filePaths.length; i++) {
+		const path = filePaths[i];
 		if (!path.endsWith('.js')) continue;
 
 		const data = require(path);

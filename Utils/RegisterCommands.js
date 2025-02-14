@@ -18,7 +18,9 @@ async function RegisterCommands(client) {
 	const commands = [];
 	const devCommands = [];
 	const commandNames = [];
-	for (const command of [...client.commands.values(), ...client.context.values()] ) {
+	const localCommands = [...client.commands.values(), ...client.context.values()];
+	for (let i = 0; i < localCommands.length; i++) {
+		const command = localCommands[i];
 		const commandData = (typeof command.data.toJSON === 'function') ? command.data.toJSON() : command.data;
 		try {
 			if (!commandData) throw `No command.data found - Did you forget to save the file?`;
@@ -159,7 +161,9 @@ module.exports = async function DynamicRegister(client, force = false) {
 	const oldDevCommands = {};
 	const newDevCommands = {};
 
-	for (const command of [...client.commands.values(), ...client.context.values()]) {
+	const localCommands = [...client.commands.values(), ...client.context.values()];
+	for (let i = 0; i < localCommands.length; i++) {
+		const command = localCommands[i];
 		if (typeof command?.data !== 'object') {
 			Logs.error(`Command ${command.name} has no data object`);
 			continue;
@@ -174,7 +178,8 @@ module.exports = async function DynamicRegister(client, force = false) {
 	}
 
 	const registeredCommands = await MakeRequest('GET', PUBLIC_ROUTE, null);
-	for (const APICommand of registeredCommands) {
+	for (let i = 0; i < registeredCommands.length; i++) {
+		const APICommand = registeredCommands[i];
 		const commandData = SimplifyCommand(APICommand);
 		oldCommands[commandData.name] = commandData;
 	}
@@ -184,7 +189,8 @@ module.exports = async function DynamicRegister(client, force = false) {
 		// additional API request to check guild commands
 
 		const registeredDevCommands = await MakeRequest('GET', DEV_ROUTE, null);
-		for (const APICommand of registeredDevCommands) {
+		for (let i = 0; i < registeredDevCommands.length; i++) {
+			const APICommand = registeredDevCommands[i];
 			const commandData = SimplifyCommand(APICommand);
 			oldDevCommands[commandData.name] = commandData;
 		}

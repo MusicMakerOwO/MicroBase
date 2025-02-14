@@ -24,8 +24,9 @@ module.exports = class FolderWatcher {
 	}
 
 	Destroy() {
-		for (const watcher of this.watchers.values()) {
-			watcher.close();
+		const watchers = Array.from(this.watchers.values());
+		for (let i = 0; i < watchers.length; i++) {
+			watchers[i].close();
 		}
 		this.onAdd = null;
 		this.onRemove = null;
@@ -102,7 +103,8 @@ module.exports = class FolderWatcher {
 		const stats = fs.lstatSync(path);
 		if (stats.isDirectory()) {
 			const items = fs.readdirSync(path, { withFileTypes: true });
-			for (const item of items) {
+			for (let i = 0; i < items.length; i++) {
+				const item = items[i];
 				if (item.isDirectory()) {
 					this.addWatcher(`${path}/${item.name}`);
 				}

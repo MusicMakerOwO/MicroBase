@@ -66,7 +66,8 @@ module.exports = function ComponentLoader(folder, cache) {
 			if (aliases && (folder === 'commands' || folder === 'messages')) {
 				if (!Array.isArray(aliases) && typeof aliases !== 'string') throw 'Invalid alias type - Must be a string or an array';
 				data.aliases = Array.isArray(aliases) ? aliases : [aliases];
-				for (const alias of aliases) {
+				for (let i = 0; i < data.aliases.length; i++) {
+					const alias = data.aliases[i];
 					if (typeof alias !== 'string') throw 'Invalid alias - Must be a string';
 					if (alias.length > 32) throw 'Alias is too long - Must be less than 32 characters';
 					if (alias.includes(' ')) throw 'Alias cannot contain spaces';
@@ -82,12 +83,14 @@ module.exports = function ComponentLoader(folder, cache) {
 					if (!data.name) throw 'No name property found';
 					if (!data.description) throw 'No description property found';
 					addComponent(cache, data.name, data);
-					for (const alias of data.aliases) {
+					for (let i = 0; i < data.aliases.length; i++) {
+						const alias = data.aliases[i];
 						addComponent(cache, alias, data);
 					}
 					break;
 				case 'command':
-					for (const alias of data.aliases) {
+					for (let i = 0; i < data.aliases.length; i++) {
+						const alias = data.aliases[i];
 						addComponent(cache, alias, { ...data, data: { ...data.data, name: alias } });
 					}
 					// fallthrough to context since they share the same structure

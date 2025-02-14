@@ -77,10 +77,13 @@ module.exports = function (client) {
 	const missingIntents = new Set();
 
 	const intents = Number(client.options.intents.bitfield);
-	for (const eventName of Object.keys(client._events)) {
+	const eventNames = Object.keys(client._events);
+	for (let i = 0; i < eventNames.length; i++) {
+		const eventName = eventNames[i];
 		const requiredBits = REQUIRED_INTENTS[eventName];
 		if (!requiredBits) continue; // custom event
-		for (const bit of requiredBits) {
+		for (let i = 0; i < requiredBits.length; i++) {
+			const bit = requiredBits[i];
 			if ((intents & bit) > 0) continue; // already have the intent
 			missingIntents.add(bit);
 		}
