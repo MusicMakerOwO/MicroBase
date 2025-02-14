@@ -49,6 +49,7 @@ const COMPONENT_FOLDERS = {
 	'./Events'  : null // handled separately
 }
 
+// The values here will be replaced with the file contents, or null if the file does not exist
 const PRESET_FILES = {
 	'./Commands': './Presets/Command',
 	'./Buttons' : './Presets/Button',
@@ -109,7 +110,7 @@ CheckIntents(client);
 
 RegisterCommands(client);
 
-function HotReload(cache, componentFolder, filePath, type = 0) {
+async function HotReload(cache, componentFolder, filePath, type = 0) {
 	if (type !== 0) return; // 0 = file, 1 = directory, 2 = symlink
 
 	const isEvent = cache === null;
@@ -136,6 +137,11 @@ function HotReload(cache, componentFolder, filePath, type = 0) {
 
 	ComponentLoader(componentFolder, cache);
 	client.logs.debug(`Loaded ${cache.size} ${componentFolder.split('/')[1]}`);
+
+	// Check by reference, not by cache contents
+	if (cache == client.commands) {
+		await RegisterCommands(client);
+	}
 }
 
 function PresetFile(cache, componentFolder, callback, filePath) {
