@@ -43,8 +43,7 @@ module.exports = {
 				await BoundHandler('modals', client.modals);
 				break;
 			default:
-				client.logs.warn(`Unknown interaction type: ${interaction.type}`);
-				client.logs.warn('Unsure how to handle this...');
+				client.logs.warn(`Unknown interaction type: ${interaction.type} - Unsure how to handle this...`);
 				break;
 		}
 	}
@@ -54,12 +53,6 @@ async function InteractionHandler(client, interaction, type, cache) {
 
 	const args = interaction.customId?.split("_") ?? [];
 	const name = args.shift() ?? interaction.commandName;
-
-	const cachedResponse = client.responseCache.get(name);
-	if (cachedResponse) {
-		await interaction.reply(cachedResponse);
-		return;
-	}
 
 	const component = cache.get(name);
 	if (!component) {
@@ -117,7 +110,6 @@ async function InteractionHandler(client, interaction, type, cache) {
 	}
 
 	try {
-		interaction.allowCache = Boolean(component.cache);
 		if (interaction.isAutocomplete()) {
 			if (typeof component.autocomplete !== 'function') throw 'Autocomplete function not implemented';
 			await component.autocomplete(interaction, client, type === 'commands' ? undefined : args);
@@ -127,7 +119,16 @@ async function InteractionHandler(client, interaction, type, cache) {
 	} catch (error) {
 		client.logs.error(error);
 
-		if (FANCY_ERRORS) {
+		await interaction.deferReply({ ephemeral: true }).catch(() => {});
+
+		if (!FANCY_ERRORS) {
+			await interaction.editReply({
+				content: `There was an error while executing this command!\n\`\`\`${error}\`\`\``,
+				embeds: [],
+				components: [],
+				files: [],
+			}).catch(() => {});
+		} else {
 			const errorData = ErrorParse(error);
 			if (errorData) {
 				const embed = {
@@ -135,7 +136,7 @@ async function InteractionHandler(client, interaction, type, cache) {
 					description: `
 	Command: \`${name}\`
 	Error: \`${errorData.message}\`
-	\`\`\`js\n${errorData.lines.join('\n')}\`\`\``,
+	\`\`\`\n${errorData.lines.join('\n')}\`\`\``,
 				}
 				await interaction.editReply({
 					content: '',
@@ -146,15 +147,5 @@ async function InteractionHandler(client, interaction, type, cache) {
 				return;
 			}
 		}
-
-		// dont save error messages lol
-		interaction.allowCache = false;
-		await interaction.deferReply({ ephemeral: true }).catch(() => {});
-		await interaction.editReply({
-			content: `There was an error while executing this command!\n\`\`\`${error}\`\`\``,
-			embeds: [],
-			components: [],
-			files: [],
-		}).catch(() => {});
 	}
 }
