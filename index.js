@@ -62,13 +62,13 @@ const PRESET_FILES = {
 
 for (const [componentFolder, presetFile] of Object.entries(PRESET_FILES)) {
 	if (!existsSync(presetFile)) {
-		client.logs.error(`The preset "${presetFile}" file does not exist - Check the relative path!`);
+		Log.error(`The preset "${presetFile}" file does not exist - Check the relative path!`);
 		PRESET_FILES[componentFolder] = null;
 		continue;
 	}
 
 	if (!(componentFolder in COMPONENT_FOLDERS)) {
-		client.logs.error(`The folder "${componentFolder}" does not exist in the COMPONENT_FOLDERS lookup`);
+		Log.error(`The folder "${componentFolder}" does not exist in the COMPONENT_FOLDERS lookup`);
 		PRESET_FILES[componentFolder] = null;
 		continue;
 	}
@@ -84,24 +84,24 @@ for (const [path, cache] of Object.entries(COMPONENT_FOLDERS)) {
 		for (const listeners of Object.values(client._events)) {
 			ListenerCount += listeners.length;
 		}
-		client.logs.debug(`Loaded ${ListenerCount - 1} events`);
+		Log.debug(`Loaded ${ListenerCount - 1} events`);
 		continue;
 	}
 
 	if (!cache) {
-		client.logs.error(`No cache found for ${path}`);
+		Log.error(`No cache found for ${path}`);
 		continue;
 	}
 
 	if (!existsSync(path)) {
-		client.logs.error(`The '${path.split('/')[1]}' folder does not exist - Check the relative path!`);
+		Log.error(`The '${path.split('/')[1]}' folder does not exist - Check the relative path!`);
 		delete COMPONENT_FOLDERS[path]; // remove it from the lookup so it doesn't get checked later
 		delete PRESET_FILES[path];
 		continue;
 	}
 	
 	ComponentLoader(path, cache);
-	client.logs.debug(`Loaded ${cache.size} ${path.split('/')[1]}`);
+	Log.debug(`Loaded ${cache.size} ${path.split('/')[1]}`);
 }
 
 // This will only check intents loaded by the event loader
@@ -124,7 +124,7 @@ async function HotReload(cache, componentFolder, filePath, type = 0) {
 		for (const listeners of Object.values(client._events)) {
 			ListenerCount += listeners.length;
 		}
-		client.logs.debug(`Loaded ${ListenerCount - 1} events`);
+		Log.debug(`Loaded ${ListenerCount - 1} events`);
 		return;
 	}
 
@@ -136,7 +136,7 @@ async function HotReload(cache, componentFolder, filePath, type = 0) {
 	cache.clear();
 
 	ComponentLoader(componentFolder, cache);
-	client.logs.debug(`Loaded ${cache.size} ${componentFolder.split('/')[1]}`);
+	Log.debug(`Loaded ${cache.size} ${componentFolder.split('/')[1]}`);
 
 	// Check by reference, not by cache contents
 	if (cache == client.commands) {
@@ -155,13 +155,13 @@ function PresetFile(cache, componentFolder, callback, filePath) {
 	callback(filePath);
 }
 
-client.logs.info(`Logging in...`);
+Log.info(`Logging in...`);
 client.login(client.config.TOKEN);
 client.on('ready', function () {
-	client.logs.custom(`Logged in as ${client.user.tag}!`, 0x7946ff);
+	Log.custom(`Logged in as ${client.user.tag}!`, 0x7946ff);
 
 	if (!config.HOT_RELOAD) {
-		client.logs.warn('Hot reload is disabled in config.json');
+		Log.warn('Hot reload is disabled in config.json');
 		return;
 	}
 
