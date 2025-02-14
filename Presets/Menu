@@ -1,0 +1,6 @@
+module.exports = {
+	customID: 'my-menu',
+	execute: async function(interaction, client, args) {
+
+	}
+}
