@@ -160,6 +160,11 @@ client.login(client.config.TOKEN);
 client.on('ready', function () {
 	client.logs.custom(`Logged in as ${client.user.tag}!`, 0x7946ff);
 
+	if (!config.HOT_RELOAD) {
+		client.logs.warn('Hot reload is disabled in config.json');
+		return;
+	}
+
 	for (const [path, cache] of Object.entries(COMPONENT_FOLDERS)) {
 		const watcher = new FileWatch(path, true);
 		const callback = Debounce(HotReload.bind(null, cache, path), 1_000);
