@@ -2,7 +2,7 @@ const CheckCooldown = require('../Utils/Checks/Cooldown');
 const GuildOwner = require('../Utils/Checks/GuildOwner');
 const IDAccess = require('../Utils/Checks/IDAccess');
 const RoleAccess = require('../Utils/Checks/RoleAccess');
-const Permission = require('../Utils/Checks/Permissions.Js');
+const Permission = require('../Utils/Checks/Permissions');
 
 const ErrorParse = require('../Utils/FindError');
 

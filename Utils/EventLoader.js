@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const { Events } = require('discord.js');
-const ReadFolder = require('./ReadFolder.js');
-const Logs = require('./Logs.js');
+const ReadFolder = require('./ReadFolder');
+const Logs = require('./Logs');
 
 const { CHECK_EVENT_NAMES } = require('../config.json');
 

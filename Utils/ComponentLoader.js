@@ -1,7 +1,7 @@
-const ReadFolder = require('./ReadFolder.js');
+const ReadFolder = require('./ReadFolder');
 const { existsSync } = require('node:fs');
 
-const Permissions = require('./Permissions.js');
+const Permissions = require('./Permissions');
 const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = function ComponentLoader(folder, cache) {
