@@ -22,7 +22,33 @@ const client = new Client({
 	]
 });
 
-// type checking done in the index.js
+const ConfigTemplate = {
+	TOKEN: 'string',
+	APP_ID: 'string',
+	DEV_GUILD_ID: 'string',
+
+	PREFIX: 'string',
+
+	HOT_RELOAD: 'boolean',
+	PROCESS_HANDLERS: 'boolean',
+	CHECK_INTENTS: 'boolean',
+	CHECK_EVENT_NAMES: 'boolean',
+	REGISTER_COMMANDS: 'boolean',
+	FANCY_ERRORS: 'boolean'
+}
+
+for (const [key, type] of Object.entries(ConfigTemplate)) {
+	if (!(key in config)) {
+		Log.error(`[~] Missing ${key} in config.json`);
+		process.exit(1);
+	}
+
+	if (typeof config[key] !== type) {
+		Log.error(`[~] Expected ${key} to be a ${type} in config.json - Got ${typeof config[key]} instead`);
+		process.exit(1);
+	}
+}
+
 client.config = config;
 client.logs = Log;
 client.cooldowns = new Map(); // guildID::userID -> timestamp
