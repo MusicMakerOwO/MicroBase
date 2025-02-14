@@ -14,9 +14,10 @@ module.exports = function ComponentLoader(folder, cache) {
 	const filePaths = ReadFolder(`${__dirname}/../${folder}`);
 	for (let i = 0; i < filePaths.length; i++) {
 		if (!filePaths[i].endsWith('.js')) continue;
-		const data = require(filePaths[i]);
-
+		
 		try {
+			const data = require(filePaths[i]);
+
 			if (!data.execute) throw `No execute function found`;
 			if (typeof data.execute !== 'function') throw `Execute is not a function`;
 			
@@ -103,7 +104,7 @@ module.exports = function ComponentLoader(folder, cache) {
 					break;
 			}
 		} catch (error) {
-			console.error(`[${folder.toUpperCase()}] Failed to load ./${filePaths[i]}: ${error}`);
+			console.error(`[${folder.toUpperCase()}] Failed to load ./${filePaths[i]}:`, error);
 		}
 
 	}
