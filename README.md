@@ -15,13 +15,7 @@ Discord bots just got easier
 	- [Context Menus](#context-menus)
 	- [Events](#events)
  - [Hot Reload](#hot-reload)
- - [Interactions in Micro](#interactions-in-micro)
- - [Sharding](#sharding)
-	- [Explanation](#sharding-explained)
-	- [Why Shard?](#why-shard)
-	- [How Micro Base Shards](#how-micro-base-shards)
-	- [Sharding Configuration](#sharding-configuration)
-	- [Disabling Sharding](#disabling-sharding)
+ - [File Presets](#file-presets)
  - [Advanced Components](#advanced-components)
 	- [Aliases](#aliases)
 	- [Component Args](#button-args)
@@ -32,10 +26,10 @@ Discord bots just got easier
  - [License](#license)
  
 ## About
-Micro Base is a pre-built bot base for [Discord.js](https://github.com/discordjs/discord.js) that makes creating Discord bots easier. We provide all the essentials a bot needs (handlers, sharding, hot reload) so you can focus on the fun stuff. We also provide a variety of features that make creating bots more fun and interactive, taking inspiration from react and developer advice.
+Micro Base is a pre-built bot base for [Discord.js](https://github.com/discordjs/discord.js) that makes creating Discord bots easier. We provide all the essentials a bot needs (handlers, logging, hot reload) so you can focus on the fun stuff. We also provide a variety of features that make creating bots more fun and interactive, taking inspiration from react and developer advice.
 
 ## Our Goals
-Discord bot are in an ever changing landscape of standards and features, no two bots are the same and often most of your time is spent simply debugging broken code. Our goal is to provide a stable and feature rich base that you can build off of, setting you off on the right foot. Micro strives to make your life easier with a stable base that you can trust. Battle tested, active development, and plenty of features to stand out of the crowd, Micro is among the best for you. We make it a point to give the developer full control over what their bot does and how.
+Discord bot are in an ever changing landscape of standards and features, no two bots are the same and often most of your time is spent simply debugging broken code. Our goal is to provide a stable and feature rich base that you can build off of, setting you off on the right foot with something you can trust - battle tested, active development, and plenty of features to stand out of the crowd - Micro is among the best for you. We make it a point to give the developer full control over what their bot does and how.
 
 ## Spotlight
 Check out some other great bases!
@@ -51,9 +45,6 @@ cd MicroBase
 npm install
 ```
 
-> NOTE:<br />
-> Micro Base has support for both TypeScript and JavaScript. If you are only here for the JS you can delete the tsconfig.json, build.js and TS folder. TS users shouldn't have to worry about this.
-
 Next you should go check out the [config.json](config.json), this is where all your configurations will go. You can set your token, prefix, and other settings here. If you need to abtain your bot token head over to the [Discord Developer Portal](https://discord.com/developers/applications). Do the same for the application ID as well while you are at it. You are now ready to start your bot!
 ```
 npm run start
@@ -67,12 +58,10 @@ A lot of features in Micro Base can see confusing or may not even work in all en
 | --- | --- | --- |
 | HOT_RELOAD | Enables hot reload for the bot, this uses fs.watch() and may not be supported in all enviorments | true |
 | PROCESS_HANDLERS | Enables the anti-crash system for the bot, this will not automatically restart but any errors will be ignored | true |
-| CHECK_PACKAGES | Checks if all the required packages are installed, this can be slow and often not needed | true |
 | CHECK_INTENTS | This is only a partial safety net, it checks what events you have added and takes a good guess | true |
 | CHECK_EVENT_NAMES | Just a quick check that all of your event names are correct, can be annoying if you have lots of custom events | true |
 | REGISTER_COMMANDS | Registers all the commands in the commands folder, this can be disabled if you want to manually register commands | true |
 | FANCY_ERRORS | Errors will be displayed in a more readable format on discord. Will show a snippet of code - not recommended for production | true |
-| ENABLE_SHARDING | Enables sharding for the bot, this is recommended for bots with over 2,500 servers | false |
 
 ## Usage
 Being flexible brings a lot of power to the table, and Micro Base is no exception, however with it comes a lot of complexity. Many new users get confused on this part who aren't used to seeing this method of bot creation. We will go over the different parts of the bot and how to use them.
@@ -133,7 +122,7 @@ module.exports = {
 ```
 
 ### Modals
-Finally we have modals which are the most complex of the components but for all the wrong reasons. Again the `customID` is the only property you need to worry about. **This is the ID of the Modal. Not the text input ID**.
+Finally we have modals which are the most complex of the components but for all the wrong reasons. Again the `customID` is the only property you need to worry about. **This is the ID of the Modal itself - Not the text input ID**.
 ```js
 module.exports = {
 	customID: 'myModal',
@@ -197,42 +186,31 @@ Micro Base uses `fs.watch()` to watch for changes in the files, when a change is
 This is a common issue with Discord and not necessarily Micro Base. Discord is a little lazy on their clients and tries to avoid loading new commands when possible. The only way to fix this is to restart your Discord client (or refresh if you are using the web client). If the command still doesn't show up you probably missed an error in the console.
 
 
+## File Presets
+Inspired by [Mid Base](https://github.com/s3dking/Mid-Base), Micro Base has a file preset system that pre-fills a file when created, this is a great time saver and lowers the learning curve for new users who may not be familiar with the idea of components. These are all blank templates to autofill the most basic stuff and just hop right into writing the actual code. Below is an example of the command preset, this is the most common one you will use.
+```js
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
-## Interactions in Micro
-
-
-
-## Sharding
-After 2,500 servers, Discord forces you to start sharding your bot. Most developers see sharding as being pretty complex, and while yes it is, it's also a lot easier than people make it out to be. The big issues only come when you have to 1) transfer data across shards (there are ways around that) and 2) when you have to split your shards across multiple computers. Micro Base makes things manageable but it's not a cure-all, everything is still done locally so don't expect to transfer your 100,000 server bot quite yet!
-
-The built-in `ShardManager` in Discord.JS is frankly kind of limited. While it is definitely cool condensing all your code into just a couple lines and letting them do the hard lifting, it does have it's drawbacks. Logs for example don't get emitted in the usual sense, you don't have control over auto-restarts, and you can't send data easily. Micro Base has a custom built `ShardManager` that gives you all of this and more. While you can't control fine tuning like RAM and I/O usage it is a much needed step in the right direction.
-
-### Sharding Explained
-I don't actually think people quite understand how sharding works. We all understand the code but what *actually* happens is still kind of a mystical. In layman's terms, sharding is just splitting your bot into multiple smaller bots. Each shard is a separate instance of your bot, they all run the same code but they completely separate. "This sounds stupid! Why would I want that?", I can hear some of you saying.
-
-Modern computers typically have 8 cores in the CPU, servers can have upwards of 32. JavaScript likes to only use one core however, so effectively your bot is only running at a fraction of the speed potential. But instead of running the bot on all 8 cores why not just run 8 different bots at once? So instead of supporting 2,500 servers at max speed you can reach 20,000 servers without any hardware upgrades! How cool is that?
-
-On the API side of Discord bots, each shard is it's own bot instance. This is an advantage though because if a shard crashes for whatever reason, you don't lose all service. Instead of all 2,500 servers going offline only about 500 lose access to the bot. Yes, it's still bad, but not as bad! Micro leverages this however with a custom built IPC protocol to communicate with shards, this is a lot faster than the default Discord.js method and gives a ton of control that you wouldn't have access to otherwise - Performance metrics, manual restarts, custom logs, and configurable shard counts (min + max).
-
-### How Micro Base Shards
-Micro Base shards by default, this is to ensure that your bot is running at peak performance. However, this can be disabled in the [config.json](#configuration) if you are not interested in sharding. Micro Base shards by default with the formula `Math.min(8, Math.ceil(client.guilds.cache.size / 1000))`. This is a pretty standard formula that most bots use, it's not perfect but it's a good starting point. This formula will give you 1 shard for every 1,000 servers, but no more than 8 shards. This is to prevent the bot from running too many shards and causing performance issues. You can change this formula in the [config.json](#configuration) if you want to, but it is not recommended.
-
-### Sharding Configuration
-Up at the top of the [Shard Manager](index.js) you will see a couple of variables: `MIN_SHARDS`, `MAX_SHARDS`, `GUILDS_PER_SHARD`, and `MAX_START_TIME`. These should all be self explanatory but I will list their usages regardless.
-
-| Variable | Description | Default |
-| --- | --- | --- |
-| MIN_SHARDS | The minimum number of shards the manager will start up, regardless of the server count | `1` |
-| MAX_SHARDS | The maximum shard count, if you exceed this it will alert you, you cannot start the bot until this is resolved | `16` |
-| GUILDS_PER_SHARD | The number of guilds per shard, this is used to calculate the shard count automatically | `2,000` |
-| MAX_START_TIME | The maximum time in ms for a shard to emit a `ready` event, if it takes longer then it will assume dead | `30,000` |
+module.exports = {
+	data: new SlashCommandBuilder()
+		.setName('ping')
+		.setDescription('Pong!'),
+	autocomplete: async function(interaction, client) {
+		// this is optional, called on any autocomplete stuff
+	},
+	execute: async function(interaction, client) {
+		
+	}
+}
+```
+Alongside the command preset there are also presets for buttons, select menus, modals, context menus, and events. Each has their own unique setup but share the same general format. These are all configurable within the `Presets` folder, find the file for the desired component and edit it to your liking. __These are not connecte to Hot Reload so you will have to restart your bot for changes to take affect.__
 
 
 ## Advanced Components
 This is where Micro Base really shines from the rest of the pack, using handlers unlocks some performance gains that you can't really find anywhere else. Component args, linking, restrictions, and caching are only a few ways that help bring the most out of your production code. The entire goal of this is to reuse as much code as possible, this is not only efficient for the compiler but also saves you time debugging.
 
 ### Aliases
-Most wouldn't count this as a performance gain but in Micro it is. Aliases are a way to reuse the same component in multiple places, Micro Base takes this a step further in that aliases can be used not only in prefix but also slash commands. Why is this useful? Say you have a leveling system, you might want to add `/rank` and `/level` as aliases to the same command, however you would have to duplicate the code in some compacity. With aliases you can simply duplicate the component data with a new name.
+Most wouldn't count this as a performance gain but in Micro it is. Aliases are a way to reuse the same component in multiple places, Micro Base takes this a step further in that aliases can be used not only in prefix but also slash commands. Why is this useful? Say you have a leveling system, you might want to add `/rank` and `/level` an alias, however you would have to duplicate the code in some compacity. With aliases you can simply duplicate the component data with a new name.
 > Caveats: Aliases are only supported in prefix and slash commands. **They count as a separate commands** so be mindful with bots that have a lot of commands. **Aliases are full duplicates internally**, they are only here to make things easier for you.
 
 <br/>
@@ -404,6 +382,23 @@ module.exports = {
 ```
 
 ## Contributing
+Contributions are always welcome! If you have an idea for a new feature or a bug fix, feel free to open a pull request - We want this to be the best it can possibly be! On that note however, we do have some guidelines to follow for commits. This is only to make maintaining the project easier for us, and to make sure we can understand what you are trying to do.
+
+1) Keep your commits short and to the point, don't commit 300 lines across 6 different files.
+2) Make sure your commit message is clear. We use a standard format inspired by Angular - `type: message`
+The type is a general idea of what it is, refer to the table below for a list of types and how they are used.
+3) Make sure your code is clean and readable, we don't want to spend hours deciphering why or how it works.
+4) Make sure your code works, if it doesn't compile and run then don't commit. We will reject it.
+5) Try to only commit full features, make sure you are content with what you have before submitting.
+
+| Type | Description |
+| ---  | --- |
+| feat | A new feature |
+| fix  | A bug fix |
+| docs | Documentation changes |
+| style | Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc) |
+| refactor | A code change that neither fixes a bug nor adds a feature |
+| perf | A code change that improves performance |
 
 ## License
 Micro Base falls under the Apache 2.0 License. You can view the full license [here](LICENSE). \
