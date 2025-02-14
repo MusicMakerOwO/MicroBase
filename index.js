@@ -26,9 +26,6 @@ const client = new Client({
 client.config = config;
 client.logs = Log;
 client.cooldowns = new Map(); // guildID::userID -> timestamp
-client.activeCollectors = new Map(); // messageID -> collector
-client.responseCache = new Map(); // messageID -> response
-client.fileErrors = new Map(); // file -> error
 
 // These are all empty but need to be defined for the ComponentLoader
 // They will be populated automatically, see below
