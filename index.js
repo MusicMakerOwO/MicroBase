@@ -1,5 +1,8 @@
 require('./Utils/ProcessHandler');
 
+const { existsSync, readFileSync, writeFileSync } = require('node:fs');
+const config = require('./config.json');
+
 const Log = require('./Utils/Logs');
 const ComponentLoader = require('./Utils/ComponentLoader');
 const EventLoader = require('./Utils/EventLoader');
@@ -8,7 +11,6 @@ const FileWatch = require('./Utils/FileWatcher');
 const CheckIntents = require('./Utils/CheckIntents');
 
 const { Client } = require('discord.js');
-const { existsSync, readFileSync, writeFileSync } = require('node:fs');
 const ReadFolder = require('./Utils/ReadFolder');
 const Debounce = require('./Utils/Debounce');
 
@@ -21,7 +23,7 @@ const client = new Client({
 });
 
 // type checking done in the index.js
-client.config = require('./config.json');
+client.config = config;
 client.logs = Log;
 client.cooldowns = new Map(); // guildID::userID -> timestamp
 client.activeCollectors = new Map(); // messageID -> collector
