@@ -1,26 +1,4 @@
-require('./Utils/ProcessHandler');
-
-const { existsSync, readFileSync, writeFileSync } = require('node:fs');
 const config = require('./config.json');
-
-const Log = require('./Utils/Logs');
-const ComponentLoader = require('./Utils/ComponentLoader');
-const EventLoader = require('./Utils/EventLoader');
-const RegisterCommands = require('./Utils/RegisterCommands');
-const FileWatch = require('./Utils/FileWatcher');
-const CheckIntents = require('./Utils/CheckIntents');
-
-const { Client } = require('discord.js');
-const ReadFolder = require('./Utils/ReadFolder');
-const Debounce = require('./Utils/Debounce');
-
-const client = new Client({
-	intents: [
-		'MessageContent',
-		'GuildMessages',
-		'DirectMessages'
-	]
-});
 
 const ConfigTemplate = {
 	TOKEN: 'string',
@@ -48,6 +26,29 @@ for (const [key, type] of Object.entries(ConfigTemplate)) {
 		process.exit(1);
 	}
 }
+
+const { existsSync, readFileSync, writeFileSync } = require('node:fs');
+
+const Log = require('./Utils/Logs');
+const ComponentLoader = require('./Utils/ComponentLoader');
+const EventLoader = require('./Utils/EventLoader');
+const RegisterCommands = require('./Utils/RegisterCommands');
+const FileWatch = require('./Utils/FileWatcher');
+const CheckIntents = require('./Utils/CheckIntents');
+
+const { Client } = require('discord.js');
+const ReadFolder = require('./Utils/ReadFolder');
+const Debounce = require('./Utils/Debounce');
+
+require('./Utils/ProcessHandler');
+
+const client = new Client({
+	intents: [
+		'MessageContent',
+		'GuildMessages',
+		'DirectMessages'
+	]
+});
 
 client.config = config;
 client.logs = Log;
