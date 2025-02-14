@@ -1,8 +1,11 @@
 const Log = require('./Logs');
-const { PROCESS_HANDLER } = require('../config.json');
+const { PROCESS_HANDLERS } = require('../config.json');
 
 ( () => {
-	if (!PROCESS_HANDLER) return;
+	if (!PROCESS_HANDLERS) {
+		Log.warn('Process handlers are disabled in config.json');
+		return;
+	}
 	
 	// Crtl + C
 	process.on('SIGINT', () => {
