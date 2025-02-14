@@ -108,7 +108,11 @@ for (const [path, cache] of Object.entries(COMPONENT_FOLDERS)) {
 
 // This will only check intents loaded by the event loader
 // If they are defined below this point they will not be checked
-CheckIntents(client);
+if (config.CHECK_INTENTS) {
+	CheckIntents(client);
+} else {
+	Log.warn('Intent checking is disabled in config.json');
+}
 
 RegisterCommands(client);
 
