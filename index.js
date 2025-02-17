@@ -178,8 +178,12 @@ function PresetFile(cache, componentFolder, callback, filePath) {
 	const presetData = PRESET_FILES[componentFolder];
 	if (!presetData) return;
 
-	// write into the new file
-	writeFileSync(filePath, presetData);
+	const fileData = readFileSync(filePath, 'utf-8');
+	// If you rename a file then it won't be empty
+	// This will prevent overwriting existing files
+	if (fileData.length === 0) {
+		writeFileSync(filePath, presetData);
+	}
 
 	// reload the cache
 	callback(filePath);
