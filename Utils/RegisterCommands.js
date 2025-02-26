@@ -151,7 +151,7 @@ module.exports = async function DynamicRegister(client, force = false) {
 		return;
 	}
 
-	if (Date.now() - lastRegister < 1000 * 10) return; // 10 second cooldown
+	if (Date.now() - lastRegister < 1000 * 5) return; // 5 second cooldown
 	lastRegister = Date.now();
 
 	Logs.info('Checking slash commands, this may take a second...');
