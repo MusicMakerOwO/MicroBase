@@ -82,26 +82,26 @@ module.exports = function ComponentLoader(folder, cache) {
 				case 'message':
 					if (!data.name) throw 'No name property found';
 					if (!data.description) throw 'No description property found';
-					addComponent(cache, data.name, data);
+					addComponent(cache, data.name, data, filePaths[i]);
 					for (let i = 0; i < data.aliases.length; i++) {
 						const alias = data.aliases[i];
-						addComponent(cache, alias, data);
+						addComponent(cache, alias, data, filePaths[i]);
 					}
 					break;
 				case 'command':
 					for (let i = 0; i < data.aliases.length; i++) {
 						const alias = data.aliases[i];
-						addComponent(cache, alias, { ...data, data: { ...data.data, name: alias } });
+						addComponent(cache, alias, { ...data, data: { ...data.data, name: alias } }, filePaths[i]);
 					}
 					// fallthrough to context since they share the same structure
 				case 'context':
 					if (!data.data) throw 'No data property found';
-					addComponent(cache, data.data.name, data);
+					addComponent(cache, data.data.name, data, filePaths[i]);
 					break;
 				case 'component':
 					if (!data.customID) throw 'No custom ID has been set';
 					if (typeof data.customID !== 'string') throw 'Invalid custom ID type - Must be string';
-					addComponent(cache, data.customID, data);
+					addComponent(cache, data.customID, data, filePaths[i]);
 					break;
 			}
 		} catch (error) {
@@ -130,10 +130,11 @@ function CheckPerms(perms, type) {
 	if (invalidPerms.length > 0) throw `Invalid ${type} permissions found: ${invalidPerms.join(', ')}`;
 }
 
-function addComponent(cache, id, data) {
+function addComponent(cache, id, data, filePath) {
 	const duplicateIDs = [];
 
 	if (cache.has(id)) duplicateIDs.push(id);
+	data.filePath = filePath;
 	cache.set(id, data);
 
 	if (duplicateIDs.length > 0) throw `Duplicate IDs found: ${duplicateIDs.join(', ')}`;

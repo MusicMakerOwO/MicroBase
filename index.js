@@ -158,19 +158,24 @@ async function HotReload(cache, componentFolder, filePath, type = 0) {
 		return;
 	}
 
-	const files = ReadFolder(`${__dirname}/${componentFolder}`);
-	for (let i = 0; i < files.length; i++) {
-		delete require.cache[ require.resolve(files[i]) ];
-	}
+	const oldComponent = require(filePath);
+
+	delete require.cache[ require.resolve(filePath) ];
 
 	cache.clear();
 
 	ComponentLoader(componentFolder, cache);
 	Log.debug(`Loaded ${cache.size} ${componentFolder.split('/')[1]}`);
 
+	const newComponent = require(filePath);
+
 	// Check by reference, not by cache contents
 	if (cache == client.commands) {
-		await RegisterCommands(client);
+		const oldCommandData = oldComponent.data?.toJSON() ?? {};
+		const newCommandData = newComponent.data?.toJSON() ?? {};
+		if (JSON.stringify(oldCommandData) !== JSON.stringify(newCommandData)) {
+			await RegisterCommands(client);
+		}
 	}
 }
 
