@@ -107,6 +107,7 @@ async function InteractionHandler(client, interaction, type, cache) {
 			client.logs.error(error);
 		}
 		await interaction.editReply(payload).catch(() => {});
+		return;
 	}
 
 	try {
