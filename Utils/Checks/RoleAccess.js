@@ -1,3 +1,5 @@
+const { GuildMember } = require("discord.js");
+
 module.exports = function MemberAccess(requiredRoles, member) {
 	if (!member) throw ['You don\'t have permission to use this command!', 'Missing member, are they in a guild?'];
 	if (!(member instanceof GuildMember)) throw ['You don\'t have permission to use this command!', 'Member is not a GuildMember'];

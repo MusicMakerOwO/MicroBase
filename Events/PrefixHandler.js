@@ -3,7 +3,11 @@ const GuildOwner = require('../Utils/Checks/GuildOwner');
 const IDAccess = require('../Utils/Checks/IDAccess');
 const RoleAccess = require('../Utils/Checks/RoleAccess');
 const Permission = require('../Utils/Checks/Permissions');
+
+const ErrorParse = require('../Utils/FindError');
+
 const { PREFIX, FANCY_ERRORS } = require('../config.json');
+
 module.exports = {
 	name: 'messageCreate',
 	execute: async function(client, message) {
