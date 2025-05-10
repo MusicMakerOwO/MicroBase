@@ -77,8 +77,6 @@ async function InteractionHandler(client, interaction, type, cache) {
 	}
 
 	const key = CacheKey(name, interaction.options?._hoistedOptions);
-	console.log(key);
-	console.log(RESPONSE_CACHE);
 	if (RESPONSE_CACHE.has(key)) {
 		const data = RESPONSE_CACHE.get(key);
 		await interaction.reply(...data).catch(() => {});
