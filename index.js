@@ -87,7 +87,8 @@ const PRESET_FILES = {
 }
 
 for (const [componentFolder, presetFile] of Object.entries(PRESET_FILES)) {
-	if (!existsSync(presetFile)) {
+	const fullPath = `${__dirname}/${presetFile}`;
+	if (!existsSync(fullPath)) {
 		Log.error(`The preset "${presetFile}" file does not exist - Check the relative path!`);
 		PRESET_FILES[componentFolder] = null;
 		continue;
@@ -99,7 +100,7 @@ for (const [componentFolder, presetFile] of Object.entries(PRESET_FILES)) {
 		continue;
 	}
 
-	const data = readFileSync(presetFile, 'utf-8');
+	const data = readFileSync(fullPath, 'utf-8');
 	if (data.length > 0) PRESET_FILES[componentFolder] = data;
 }
 
