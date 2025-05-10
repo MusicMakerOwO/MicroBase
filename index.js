@@ -148,6 +148,10 @@ async function HotReload(cache, componentFolder, filePath, type = 0) {
 
 	const isEvent = cache === null;
 
+	const oldComponent = require(filePath);
+
+	delete require.cache[ require.resolve(filePath) ];
+
 	// repopulate the cache, register commands if needed
 
 	if (isEvent) {
@@ -160,10 +164,6 @@ async function HotReload(cache, componentFolder, filePath, type = 0) {
 		Log.debug(`Loaded ${ListenerCount - 1} events`);
 		return;
 	}
-
-	const oldComponent = require(filePath);
-
-	delete require.cache[ require.resolve(filePath) ];
 
 	cache.clear();
 
