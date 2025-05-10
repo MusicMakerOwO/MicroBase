@@ -156,7 +156,7 @@ async function HotReload(cache, componentFolder, filePath, type = 0) {
 
 	if (isEvent) {
 		client.removeAllListeners();
-		EventLoader(client);
+		EventLoader(client, componentFolder);
 		let ListenerCount = 0;
 		for (const listeners of Object.values(client._events)) {
 			ListenerCount += listeners.length;
