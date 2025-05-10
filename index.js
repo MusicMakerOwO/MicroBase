@@ -105,13 +105,15 @@ for (const [componentFolder, presetFile] of Object.entries(PRESET_FILES)) {
 }
 
 for (const [path, cache] of Object.entries(COMPONENT_FOLDERS)) {
+	const fullPath = `${__dirname}/${path}`;
 	if (cache === null) {
+		client.removeAllListeners();
 		EventLoader(client, path);
 		let ListenerCount = 0;
 		for (const listeners of Object.values(client._events)) {
 			ListenerCount += listeners.length;
 		}
-		Log.debug(`Loaded ${ListenerCount - 1} events`);
+		Log.debug(`Loaded ${ListenerCount} events`);
 		continue;
 	}
 
@@ -120,7 +122,7 @@ for (const [path, cache] of Object.entries(COMPONENT_FOLDERS)) {
 		continue;
 	}
 
-	if (!existsSync(path)) {
+	if (!existsSync(fullPath)) {
 		Log.error(`The '${path.split('/')[1]}' folder does not exist - Check the relative path!`);
 		delete COMPONENT_FOLDERS[path]; // remove it from the lookup so it doesn't get checked later
 		delete PRESET_FILES[path];
