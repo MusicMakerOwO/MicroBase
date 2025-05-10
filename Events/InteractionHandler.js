@@ -49,6 +49,18 @@ module.exports = {
 	}
 }
 
+const RESPONSE_CACHE = new Map(); // commandName -> { response }
+
+module.exports.RESPONSE_CACHE = RESPONSE_CACHE;
+
+// options = { value: string, name: string, type: number, focused?: boolean }[]
+function CacheKey(name, options) {
+	if (options === null || options === undefined) return name;
+	options.sort((a, b) => a.name.localeCompare(b.name));
+	const optionKey = options.map(x => x.name +'-'+ x.value).join('_');
+	return `${name}_${optionKey}`;
+}
+
 async function InteractionHandler(client, interaction, type, cache) {
 
 	const args = interaction.customId?.split("_") ?? [];
@@ -61,6 +73,15 @@ async function InteractionHandler(client, interaction, type, cache) {
 			ephemeral: true
 		}).catch(() => { });
 		client.logs.error(`${type} not found: ${name}`);
+		return;
+	}
+
+	const key = CacheKey(name, interaction.options?._hoistedOptions);
+	console.log(key);
+	console.log(RESPONSE_CACHE);
+	if (RESPONSE_CACHE.has(key)) {
+		const data = RESPONSE_CACHE.get(key);
+		await interaction.reply(...data).catch(() => {});
 		return;
 	}
 
@@ -130,6 +151,8 @@ async function InteractionHandler(client, interaction, type, cache) {
 		await callback(interaction, client, type === 'commands' ? undefined : args);
 		clearTimeout(timeout);
 	} catch (error) {
+		clearTimeout(timeout);
+		RESPONSE_CACHE.delete(key);
 		client.logs.error(error);
 
 		await interaction.deferReply({ ephemeral: true }).catch(() => {});

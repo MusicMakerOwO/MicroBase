@@ -39,6 +39,7 @@ const CheckIntents = require('./Utils/CheckIntents');
 const { Client } = require('discord.js');
 const ReadFolder = require('./Utils/ReadFolder');
 const Debounce = require('./Utils/Debounce');
+const { RESPONSE_CACHE } = require('./Events/InteractionHandler');
 
 require('./Utils/ProcessHandler');
 
@@ -180,6 +181,8 @@ async function HotReload(cache, componentFolder, filePath, type = 0) {
 			await RegisterCommands(client);
 		}
 	}
+
+	RESPONSE_CACHE.clear();
 }
 
 function PresetFile(cache, componentFolder, callback, filePath) {
