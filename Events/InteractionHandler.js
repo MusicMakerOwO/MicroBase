@@ -110,13 +110,25 @@ async function InteractionHandler(client, interaction, type, cache) {
 		return;
 	}
 
-	try {
-		if (interaction.isAutocomplete()) {
-			if (typeof component.autocomplete !== 'function') throw 'Autocomplete function not implemented';
-			await component.autocomplete(interaction, client, type === 'commands' ? undefined : args);
+	const oldReply = interaction.reply.bind(interaction);
+	interaction.reply = function (...args) {
+		if (interaction.deferred || interaction.replied) {
+			return interaction.editReply(...args);
 		} else {
-			await component.execute(interaction, client, type === 'commands' ? undefined : args);
+			return oldReply(...args);
 		}
+	}
+
+	const timeout = setTimeout(async () => {
+		if (interaction.deferred || interaction.replied) return;
+		await interaction.deferReply();
+	})
+
+	try {
+		const callback = interaction.isAutocomplete() ? component.autocomplete : component.execute;
+		if (typeof callback !== 'function') throw new 'Command not implemented';
+		await callback(interaction, client, type === 'commands' ? undefined : args);
+		clearTimeout(timeout);
 	} catch (error) {
 		client.logs.error(error);
 
