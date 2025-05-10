@@ -5,10 +5,7 @@ const Logs = require('./Logs');
 
 const { CHECK_EVENT_NAMES } = require('../config.json');
 
-const IGNORED_EVENTS = [
-	'hotReload',
-	'shutdown'
-]
+const IGNORED_EVENTS = []
 
 module.exports = function (client, folderPath) {
 	if (!fs.existsSync(`${__dirname}/../${folderPath}`)) {
