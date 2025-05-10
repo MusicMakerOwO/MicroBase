@@ -7,7 +7,7 @@ module.exports = {
 	.setDescription('Demo for caching and auto-defer in microbase'),
 	execute: async function (interaction) {
 		
-		await new Promise(resolve => setTimeout(resolve, 4000)); // stall for 4 seconds
+		await new Promise(resolve => setTimeout(resolve, 5000)); // stall for 5 seconds
 
 		await interaction.reply('Finished!');
 	}
