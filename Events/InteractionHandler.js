@@ -131,19 +131,24 @@ async function InteractionHandler(client, interaction, type, cache) {
 		return;
 	}
 
-	const oldReply = interaction.reply.bind(interaction);
-	interaction.reply = function (...args) {
-		if (interaction.deferred || interaction.replied) {
-			return interaction.editReply(...args);
-		} else {
-			return oldReply(...args);
+	if (!interaction.isAutocomplete()) {
+		const oldReply = interaction.reply.bind(interaction);
+		const oldEdit = interaction.editReply.bind(interaction);
+		interaction.reply = function (...args) {
+			if (component.cache) RESPONSE_CACHE.set(key, args);
+			const callback = (interaction.deferred || interaction.replied) ? oldEdit : oldReply;
+			return callback(...args);
 		}
-	}
+		interaction.editReply = function (...args) {
+			if (component.cache) RESPONSE_CACHE.set(key, args);
+			return oldEdit(...args);
+		}
 
-	const timeout = setTimeout(async () => {
-		if (interaction.deferred || interaction.replied) return;
-		await interaction.deferReply();
-	})
+		var timeout = setTimeout(async () => {
+			if (interaction.deferred || interaction.replied) return;
+			await interaction.deferReply();
+		}, 1000);
+	}
 
 	try {
 		const callback = interaction.isAutocomplete() ? component.autocomplete : component.execute;
