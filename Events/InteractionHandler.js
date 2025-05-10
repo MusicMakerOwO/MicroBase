@@ -134,7 +134,7 @@ async function InteractionHandler(client, interaction, type, cache) {
 
 		await interaction.deferReply({ ephemeral: true }).catch(() => {});
 
-		if (!FANCY_ERRORS) {
+		if (!FANCY_ERRORS || !(error instanceof Error)) {
 			await interaction.editReply({
 				content: `There was an error while executing this command!\n\`\`\`${error}\`\`\``,
 				embeds: [],
