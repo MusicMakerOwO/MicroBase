@@ -208,7 +208,8 @@ client.on('ready', function () {
 	}
 
 	for (const [path, cache] of Object.entries(COMPONENT_FOLDERS)) {
-		const watcher = new FileWatch(path, true);
+		const fullPath = `${__dirname}/${path}`;
+		const watcher = new FileWatch(fullPath, true);
 		const callback = Debounce(HotReload.bind(null, cache, path), 1_000);
 		watcher.onAdd = PresetFile.bind(null, cache, path, callback);
 		watcher.onRemove = callback;
