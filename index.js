@@ -187,6 +187,7 @@ async function HotReload(cache, componentFolder, filePath, type = 0) {
 		}
 	}
 
+	// we can't assume the response is the same
 	RESPONSE_CACHE.clear();
 }
 
