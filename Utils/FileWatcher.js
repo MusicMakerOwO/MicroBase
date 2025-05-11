@@ -50,11 +50,13 @@ module.exports = class FolderWatcher {
 
 	Add(file) {
 
-		if (this.recursive && fs.lstatSync(file).isDirectory()) {
+		const type = this.GetItemType(file);
+
+		if (this.recursive && type === ItemType.DIRECTORY) {
 			this.addWatcher(file);
 		}
 
-		if (this.onAdd) this.onAdd(file, this.GetItemType(file));
+		if (this.onAdd) this.onAdd(file, type);
 	}
 
 	Remove(file) {
