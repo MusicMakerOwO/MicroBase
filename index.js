@@ -191,15 +191,18 @@ async function HotReload(cache, componentFolder, filePath, type = 0) {
 	RESPONSE_CACHE.clear();
 }
 
-function PresetFile(cache, componentFolder, callback, filePath) {
+async function PresetFile(cache, componentFolder, callback, filePath) {
 	const presetData = PRESET_FILES[componentFolder];
 	if (!presetData) return;
 
-	const fileData = readFileSync(filePath, 'utf-8');
+	const fileStats = await lstat(filePath);
+	if (fileStats.isDirectory()) return;
+	if (fileStats.isSymbolicLink()) return;
+
 	// If you rename a file then it won't be empty
 	// This will prevent overwriting existing files
-	if (fileData.length === 0) {
-		writeFileSync(filePath, presetData);
+	if (fileStats.size === 0) {
+		await writeFile(filePath, presetData);
 	}
 
 	// reload the cache
