@@ -199,6 +199,14 @@ async function HotReload(cache, componentFolder, filePath, type = 0) {
 			if (JSON.stringify(oldCommandData) !== JSON.stringify(newCommandData)) {
 				await RegisterCommands(client);
 			}
+			// check aliases too
+			if (oldComponent.aliases && newComponent.aliases) {
+				const oldAliases = oldComponent.aliases.sort((a, b) => a.localeCompare(b));
+				const newAliases = newComponent.aliases.sort((a, b) => a.localeCompare(b));
+				if (JSON.stringify(oldAliases) !== JSON.stringify(newAliases)) {
+					await RegisterCommands(client);
+				}
+			}
 		}
 	} else {
 		await RegisterCommands(client);
