@@ -1,3 +1,5 @@
+const preloadStart = process.hrtime.bigint();
+
 const config = require('./config.json');
 
 const ConfigTemplate = {
@@ -37,11 +39,14 @@ const FileWatch = require('./Utils/FileWatcher');
 const CheckIntents = require('./Utils/CheckIntents');
 
 const { Client } = require('discord.js');
-const ReadFolder = require('./Utils/ReadFolder');
 const Debounce = require('./Utils/Debounce');
 const { RESPONSE_CACHE } = require('./Events/InteractionHandler');
 
 require('./Utils/ProcessHandler');
+
+const preloadEnd = process.hrtime.bigint();
+const preloadTime = Number(preloadEnd - preloadStart) / 1e6;
+Log.custom(`Preload time: ${~~preloadTime}ms`, 0x7946ff);
 
 const client = new Client({
 	intents: [
