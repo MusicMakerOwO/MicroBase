@@ -29,7 +29,8 @@ for (const [key, type] of Object.entries(ConfigTemplate)) {
 	}
 }
 
-const { existsSync, readFileSync, writeFileSync } = require('node:fs');
+const { existsSync, readFileSync } = require('node:fs');
+const { writeFile, lstat } = require('node:fs/promises');
 
 const Log = require('./Utils/Logs');
 const ComponentLoader = require('./Utils/ComponentLoader');
@@ -152,6 +153,18 @@ RegisterCommands(client);
 async function HotReload(cache, componentFolder, filePath, type = 0) {
 	if (type !== 0) return; // 0 = file, 1 = directory, 2 = symlink
 
+	try {
+		const stat = await lstat(filePath);
+		if (stat.isDirectory()) return;
+		if (stat.isSymbolicLink()) return;
+	} catch (err) {
+		// file doesn't exist :(
+
+		// slight edge case but there's no easy way to check this
+		// If you delete an item on disk you can't check the metadata lol
+		if (!filePath.endsWith('.js')) return;
+	}
+
 	const isEvent = cache === null;
 
 	const oldComponent = require(filePath);
@@ -176,15 +189,19 @@ async function HotReload(cache, componentFolder, filePath, type = 0) {
 	ComponentLoader(componentFolder, cache);
 	Log.debug(`Loaded ${cache.size} ${componentFolder.split('/')[1]}`);
 
-	const newComponent = require(filePath);
+	if (existsSync(filePath)) {
+		const newComponent = require(filePath);
 
-	// Check by reference, not by cache contents
-	if (cache == client.commands) {
-		const oldCommandData = oldComponent.data?.toJSON() ?? {};
-		const newCommandData = newComponent.data?.toJSON() ?? {};
-		if (JSON.stringify(oldCommandData) !== JSON.stringify(newCommandData)) {
-			await RegisterCommands(client);
+		// Check by reference, not by cache contents
+		if (cache == client.commands) {
+			const oldCommandData = oldComponent.data?.toJSON() ?? {};
+			const newCommandData = newComponent.data?.toJSON() ?? {};
+			if (JSON.stringify(oldCommandData) !== JSON.stringify(newCommandData)) {
+				await RegisterCommands(client);
+			}
 		}
+	} else {
+		await RegisterCommands(client);
 	}
 
 	// we can't assume the response is the same
