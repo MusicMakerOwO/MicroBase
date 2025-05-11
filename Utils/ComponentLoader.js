@@ -63,7 +63,7 @@ module.exports = function ComponentLoader(folder, cache) {
 			if (data.defer && typeof data.defer !== 'boolean') throw 'Invalid defer type - Must be a boolean';
 
 			const aliases = data.alias ?? data.aliases ?? [];
-			if (aliases && (folder === 'commands' || folder === 'messages')) {
+			if (aliases) {
 				if (!Array.isArray(aliases) && typeof aliases !== 'string') throw 'Invalid alias type - Must be a string or an array';
 				data.aliases = Array.isArray(aliases) ? aliases : [aliases];
 				for (let i = 0; i < data.aliases.length; i++) {
