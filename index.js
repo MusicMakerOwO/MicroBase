@@ -169,11 +169,23 @@ async function HotReload(cache, componentFolder, filePath, type = 0) {
 		if (!filePath.endsWith('.js')) return;
 	}
 
+	delete require.cache[ resolve(filePath) ];
+
+	if (!existsSync(filePath)) {
+		// deleted file, reload everything
+		if (cache === null) {
+			ResetEvents(componentFolder);
+			return;
+		}
+		cache.clear();
+		ComponentLoader(componentFolder, cache);
+		await RegisterCommands(client);
+		return;
+	}
+
 	const isEvent = cache === null;
 
 	const oldComponent = require(filePath);
-
-	delete require.cache[ require.resolve(filePath) ];
 
 	// repopulate the cache, register commands if needed
 
@@ -187,27 +199,23 @@ async function HotReload(cache, componentFolder, filePath, type = 0) {
 	ComponentLoader(componentFolder, cache);
 	Log.debug(`Loaded ${cache.size} ${componentFolder.split('/')[1]}`);
 
-	if (existsSync(filePath)) {
-		const newComponent = require(filePath);
+	const newComponent = require(filePath);
 
-		// Check by reference, not by cache contents
-		if (cache == client.commands) {
-			const oldCommandData = oldComponent.data?.toJSON() ?? {};
-			const newCommandData = newComponent.data?.toJSON() ?? {};
-			if (JSON.stringify(oldCommandData) !== JSON.stringify(newCommandData)) {
+	// Check by reference, not by cache contents
+	if (cache == client.commands) {
+		const oldCommandData = oldComponent.data?.toJSON() ?? {};
+		const newCommandData = newComponent.data?.toJSON() ?? {};
+		if (JSON.stringify(oldCommandData) !== JSON.stringify(newCommandData)) {
+			await RegisterCommands(client);
+		}
+		// check aliases too
+		if (oldComponent.aliases && newComponent.aliases) {
+			const oldAliases = oldComponent.aliases.sort((a, b) => a.localeCompare(b));
+			const newAliases = newComponent.aliases.sort((a, b) => a.localeCompare(b));
+			if (JSON.stringify(oldAliases) !== JSON.stringify(newAliases)) {
 				await RegisterCommands(client);
 			}
-			// check aliases too
-			if (oldComponent.aliases && newComponent.aliases) {
-				const oldAliases = oldComponent.aliases.sort((a, b) => a.localeCompare(b));
-				const newAliases = newComponent.aliases.sort((a, b) => a.localeCompare(b));
-				if (JSON.stringify(oldAliases) !== JSON.stringify(newAliases)) {
-					await RegisterCommands(client);
-				}
-			}
 		}
-	} else {
-		await RegisterCommands(client);
 	}
 
 	// we can't assume the response is the same
