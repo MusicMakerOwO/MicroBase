@@ -114,13 +114,7 @@ for (const [componentFolder, presetFile] of Object.entries(PRESET_FILES)) {
 for (const [path, cache] of Object.entries(COMPONENT_FOLDERS)) {
 	const fullPath = `${__dirname}/${path}`;
 	if (cache === null) {
-		client.removeAllListeners();
-		EventLoader(client, path);
-		let ListenerCount = 0;
-		for (const listeners of Object.values(client._events)) {
-			ListenerCount += listeners.length;
-		}
-		Log.debug(`Loaded ${ListenerCount} events`);
+		ResetEvents(path);
 		continue;
 	}
 
@@ -150,6 +144,16 @@ if (config.CHECK_INTENTS) {
 
 RegisterCommands(client);
 
+function ResetEvents(path) {
+	client.removeAllListeners();
+	EventLoader(client, path);
+	let ListenerCount = 0;
+	for (const listeners of Object.values(client._events)) {
+		ListenerCount += listeners.length;
+	}
+	Log.debug(`Loaded ${ListenerCount} events`);
+}
+
 async function HotReload(cache, componentFolder, filePath, type = 0) {
 	if (type !== 0) return; // 0 = file, 1 = directory, 2 = symlink
 
@@ -174,13 +178,7 @@ async function HotReload(cache, componentFolder, filePath, type = 0) {
 	// repopulate the cache, register commands if needed
 
 	if (isEvent) {
-		client.removeAllListeners();
-		EventLoader(client, componentFolder);
-		let ListenerCount = 0;
-		for (const listeners of Object.values(client._events)) {
-			ListenerCount += listeners.length;
-		}
-		Log.debug(`Loaded ${ListenerCount} events`);
+		ResetEvents(componentFolder);
 		return;
 	}
 
