@@ -42,6 +42,7 @@ const CheckIntents = require('./Utils/CheckIntents');
 const { Client } = require('discord.js');
 const Debounce = require('./Utils/Debounce');
 const { RESPONSE_CACHE } = require('./Events/InteractionHandler');
+const { resolve } = require('node:path');
 
 require('./Utils/ProcessHandler');
 
