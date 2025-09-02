@@ -8,11 +8,38 @@ const ErrorParse = require('../Utils/FindError');
 
 const { FANCY_ERRORS } = require('../config.json');
 
+const { CommandInteraction, MessageFlags } = require("discord.js");
+
 module.exports = {
 	name: 'interactionCreate',
 	execute: async function (client, interaction) {
 
 		const BoundHandler = InteractionHandler.bind(null, client, interaction);
+
+		CommandInteraction.prototype.reply = (function (original) { 
+			// Prevents the decrepitated "ephemeral" message in later discord.js versions.
+			// Also allows to use MessageFlags.IsComponentsV2 without needing to define "MesssageFlags" by simply doing v2: true
+			return async function (options) {
+				let messageFlags = [];
+		
+				if (options.v2) {
+					messageFlags.push(MessageFlags.IsComponentsV2);
+					delete options.v2;
+				}
+		
+				if (options.ephemeral) {
+					messageFlags.push(MessageFlags.Ephemeral);
+					delete options.ephemeral;
+				}
+		
+				if (messageFlags.length > 0) {
+					options.flags = (options.flags ?? 0) |
+						messageFlags.reduce((a, b) => a | b, 0);
+				}
+
+				return original.call(this, options);
+			};
+		})(CommandInteraction.prototype.reply);
 
 		switch (interaction.type) {
 			case 4: // Autocomplete
